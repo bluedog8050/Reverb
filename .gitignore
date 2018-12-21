@@ -1,0 +1,7 @@
+reference/
+.vscode/
+__pycache__
+bot.key
+*.ini
+*.json
+*.code-workspace
