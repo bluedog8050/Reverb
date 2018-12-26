@@ -3,7 +3,7 @@
 of this program is to assist in a "play by post" roleplaying game on a text or voice 
 chat server.
 
-    Copyright (C) 2018  Derek Peterson
+    Copyright (C) 2018  Derek Peterson < deniableassetsgm@gmail.com >
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ from collections import OrderedDict
 
 import discord
 import wikia
+import uptime as UptimeModule
 
 import message_strings as mstr
 
@@ -603,7 +604,7 @@ def get_uptime():
     return uptime_string
 #ANCHOR SYSUPTIME
 def get_sysuptime():
-    sysuptime_seconds = int(Uptime.uptime())
+    sysuptime_seconds = int(UptimeModule.uptime())
     sysuptime_delta = datetime.timedelta(seconds = sysuptime_seconds)
     sysuptime_string = 'OS has been running for {0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(sysuptime_delta.days), str(sysuptime_delta.seconds//3600), str((sysuptime_delta.seconds//60)%60), str(sysuptime_delta.seconds%60))
     return sysuptime_string
