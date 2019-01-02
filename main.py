@@ -1,4 +1,5 @@
 #!/home/pi/reverb/bin/python3
+
 '''Reverb Bot is a chat command bot created for use with Discord. The primary purpose
 of this program is to assist in a "play by post" roleplaying game on a text or voice 
 chat server.
@@ -21,21 +22,20 @@ chat server.
 import asyncio
 import datetime
 import html
-import json
 import os
 import re
 import sys
 import types
-import configparser
-import uptime as Uptime
-from collections import Counter
-from collections import OrderedDict
+from collections import Counter, OrderedDict
+from configparser import ConfigParser
 
 import discord
-import wikia
 import uptime as UptimeModule
+import wikia
 
 import message_strings as mstr
+from classes import *
+from functions import *
 
 #SECTION CONFIG VARIABLES
 COMMAND_CHAR = '!'
@@ -53,14 +53,8 @@ print('''Reverb Bot  Copyright (C) 2018  Derek Peterson
 #set CWD and load system.config settings
 os.chdir(os.path.abspath(os.path.dirname(sys.argv[0])))
 
-config = configparser.ConfigParser(default_section='DEFAULT', allow_no_value=True, dict_type=OrderedDict)
-books = configparser.ConfigParser()
-
-def save_config():
-    with open('bot.ini', 'w+') as f:
-        f.write(mstr.SYSTEM_CONFIG_BOILERPLATE)
-        f.write('\n')
-        config.write(f)
+config = ConfigParser(default_section='DEFAULT', allow_no_value=True, dict_type=OrderedDict)
+reference_books = ConfigParser()
 
 try:
     with open('bot.ini', 'r') as f:
@@ -73,21 +67,21 @@ except FileNotFoundError:
     defconfig['gm_role'] = 'gm'
     defconfig['player_role'] = 'player'
     defconfig['wikia_list'] = 'shadowrun'
-    save_config()
+    saveConfig(config, 'bot.ini')
 
 try:
-    with open('ref_books.ini') as f:
-        books.read_file(f)
+    with open('reference_books.ini') as f:
+        reference_books.read_file(f)
 except FileNotFoundError:
-    data = '''# [TAG]
+    data = '''# [TAG] 
 #    title = Full Title of the Book
 #    url = http://www.mywebsite.com/directory/books/pg{page}.pdf
 #    offset = 2  #to correct differences between page number and file number'''
-    with open('ref_books.ini', 'w+') as f:
+    with open('reference_books.ini', 'w+') as f:
         f.write(data)
 
 print('script started in:', os.getcwd())
-time_start = datetime.datetime.utcnow()
+time_start = datetime.utcnow()
 
 client = discord.Client()
 links = {}
@@ -101,118 +95,13 @@ except:
     print('Exiting script...')
     exit(0)
 
-def read_json_file(filename, default_data = r'{}'):
-    try:
-        with open(filename, 'r+') as f:
-            return json.load(f)
-    except:
-        with open(filename, 'a+') as f:
-            f.write(default_data)
-            return dict(default_data)
-
-links = read_json_file('links.json')
-pbp_tracker = read_json_file('pbp.json')
-command_stats = read_json_file('cmd_stats.json')
+links = readJsonFile('links.json')
+pbp_tracker = readJsonFile('pbp.json')
+command_stats = readJsonFile('cmd_stats.json')
 
 #books: {REF:[FolderURL,PgOffset]}
 
-global clear_flag
 clear_flag = []
-
-async def delete_messages(self, msg_list):
-    for msg in msg_list:
-        await client.delete_message(msg)
-        await asyncio.sleep(1.2)
-
-#region SECTION COMMAND CLASSES
-class CommandError(KeyError):
-    pass
-class CommandPacket():
-    '''Parse and package a message containing a command and expose commonly used attributes from message class'''
-    def __init__(self, message : discord.Message):
-        if message.server.id not in config:
-            config[message.server.id] = {}
-            config[message.server.id]['server_name'] = message.server.name
-            save_config()
-        if not message.content.startswith(config[message.server.id].get('command_char')): 
-            raise CommandError('Message does not start with designated command character')
-        self.message = message
-        self.server = message.server
-        self.channel = message.channel
-        self.content = message.content
-        self.args = [x.strip() for x in self.content.split()]
-        self.sender = self.message.author
-        self.command = self.args.pop(0)[1:]
-    def __getitem__(self, index):
-        return self.args[index]
-    def read(self, number_words : int, start_index : int = 0):
-        _list = []
-        for i in range(start_index, start_index + number_words + 1):
-            _list.append(self.args[i])
-        _string = ' '.join(_list)
-        return _string
-    async def getTargetMembers(self):
-        m = self.target_members = re.findall(r'<?@!?(&?\d+)>?', self.content)
-        to_add = []
-        to_remove = []
-        #expand out role to users
-        for t in m:
-            if t.startswith('&'):
-                to_remove.append(t)
-                to_add.extend(getMembersFromRole(self.server, t))
-        for t in to_remove:
-            m.remove(t)
-        for t in m:
-            yield t
-    async def getTargetChannels(self):
-        for t in re.findall(r'<?#(\d+)>?', self.content):
-            yield t
-class Bot():
-    def __init__(self):
-        self.registry = {}
-    def command(self, *permissions):
-        '''Register a function as a chat command. Function must return a string'''
-        def wrapper(func):
-            setattr(wrapper,'__name__', func.__name__)
-            self.registry[func.__name__] = (func, list(permissions))
-            return func
-        return wrapper
-    async def do(self, command : CommandPacket):
-        if command.command == 'help':
-            return await self.help(command)
-        elif command.command not in self.registry:
-            raise CommandError('No registered function matches given command')
-        elif not self.registry[command.command][1]: #if no set permissions
-            return await self.registry[command.command][0](command) #just do it
-        elif not command.args and 'self' in self.registry[command.command][1]:
-            return await self.registry[command.command][0](command)
-        elif 'player' in self.registry[command.command][1] and config[command.server.id]['player_role'] in [r.name for r in command.sender.roles]:
-            return await self.registry[command.command][0](command)
-        elif 'gm' in self.registry[command.command][1] and config[command.server.id]['gm_role'] in [r.name for r in command.sender.roles]:
-            return await self.registry[command.command][0](command)
-        else:
-            if not self.registry[command.command][1]:
-                return await self.registry[command.command][0](command)
-            for permission in self.registry[command.command][1]:
-                for role in command.sender.roles:
-                    if role.name == permission:
-                        try:
-                            return await self.registry[command.command][0](command)
-                        except KeyError:
-                            raise CommandError('No registered function matches given command')
-                else:
-                    raise CommandError(f'User does not have required permissions for command "{command.command}"')
-    async def help(self, command):
-        l = []
-        for n,d in self.registry.items():
-            try:
-                line = '```' + config.get(command.server.id, 'command_char') + '{0} {1}```\n{2}{3}'.format(n, d[0].__annotations__['return'], '*' + str(d[1]) + '* - ' if d[1] else '', d[0].__doc__.format(wiki = config.get(command.server.id, 'wikia_list')))
-            except KeyError:
-                line = '```' + config.get(command.server.id, 'command_char') + '{0}```\n{1}{2}'.format(n, '*' + str(d[1]) + '* - ' if d[1] else '', d[0].__doc__.format(wiki = config.get(command.server.id, 'wikia_list')))
-            l.append(line)
-        return 'Commands available to Reverb:\n\n' + '\n\n'.join(l)
-#endregion !SECTION
-
 bot = Bot()
 
 #region SECTION Command List
@@ -380,8 +269,8 @@ async def on_message(message):
 
     #NOTE MAGICALLY PROCESS COMMANDS
     try:
-        cmd = CommandPacket(message)
-        msg = await bot.do(cmd)
+        cmd = CommandPacket(config, message)
+        msg = await bot.do(config, cmd)
     except CommandError: 
         pass #Raised if string is not a command
     else:
@@ -412,7 +301,7 @@ async def on_message(message):
             return #Stop message processing
 
     #ANCHOR RULE REFERENCE
-    for book in books.keys():
+    for book in reference_books.keys():
         terms = re.findall(r'{0}\s(?:p|pg)?\s?(\d+)'.format(book), message.content, re.IGNORECASE)
         if terms:
             print(f'Detected reference command: {book}')
@@ -421,11 +310,11 @@ async def on_message(message):
             for t in terms:
                 print('PAGE ' + t)
                 z = ''
-                u = int(t) + int(books[book]['offset'])
+                u = int(t) + int(reference_books[book]['offset'])
                 if int(u) < 10:
                     z = '0'
                 page_number = z + str(u)
-                string = string + book + ' ' + t + ': ' + books[book]['url'].format(page=page_number) + '\n'
+                string = string + book + ' ' + t + ': ' + reference_books[book]['url'].format(page=page_number) + '\n'
             await client.send_message(message.channel, string)
 #!SECTION
 
@@ -464,8 +353,7 @@ async def check_pbp(message):
             async for msg in client.logs_from(channel):
                 if msg.content.startswith(mstr.PBP_WAITING):
                     pending_deletion.append(msg)
-            for msg in pending_deletion:
-                await client.delete_message(msg)
+            deleteMessages(client, pending_deletion)
         except Exception as e:
             print('Failed to delete old "Waiting for" messages')
             print(e)
@@ -478,122 +366,6 @@ async def check_pbp(message):
         return True #ignore rule reference triggers
     else:
         return False
-
-#SECTION Ledger Class
-class Ledger:
-    SUCCESS = 'Ledger updated! :thumbsup:'
-    ERROR = ':frown: Something went wrong while updating the ledger...'
-
-    ## {'server':{'user':['oct-18-2018',1,2,'This is a test entry']},}
-    def __init__(self, name, unit_string, *flags):
-        self.name = name
-        self.unit_string = unit_string
-        try:
-            with open(f'{self.name}.json') as f:
-                self.data = json.load(f)
-        except:
-            self.data = {}
-        if 'prefix' in flags: self.prefix = True 
-        else: self.prefix = False
-        if 'allow_negative' in flags: self.allow_negative = True 
-        else: self.allow_negative = False
-        
-        return
-
-    # SERVER > USER > [date, change, balance, note],
-    #ANCHOR ADD ENTRY
-    def addentry(self, server, user, amount_change, note=''):
-        # try:    
-        if server not in self.data: self.data.update({server : {}})
-        if user not in self.data[server]: self.data[server].update({user : []})
-        try:
-            balance = int(self.data[server][user][-1][2])+int(amount_change)
-        except:
-            balance = int(amount_change)
-        entry = [datetime.datetime.now().strftime(r"%Y-%m-%d"), str(amount_change), str(balance), note]
-        print(entry)
-        self.data[server][user].append(entry)
-        message = Ledger.SUCCESS
-        # except:
-        #     print('Ledger failed to add item!')
-        #     message = Ledger.error
-
-        return message
-    #ANCHOR GET BALANCE
-    def getbalance(self, server, user, *flags):
-        try:
-            print(self.data)
-            if 'int' in flags:
-                balance = int(self.data[server][user][-1][2])
-            else:
-                balance = (self.unit_string + self.data[server][user][-1][2]) if self.prefix else (self.data[server][user][-1][2] + ' ' + self.unit_string)
-        except KeyError:
-            if 'int' in flags:
-                balance = 0
-            else:
-                balance = 'no transaction history'
-        return balance
-    #ANCHOR SAVE TO FILE
-    def savetofile(self):
-        try:
-            with open(f'{self.name}.json', 'w+') as outfile:
-                json.dump(self.data, outfile)
-            print('{0} ledger saved'.format(self.unit_string))
-        except:
-            print('{} ledger could not be saved to file!'.format(self.unit_string))
-            return
-    #ANCHOR GET HISTORY
-    def gethistory(self, server, user, lines=5):
-        history = 'Date\t\tChange\tBal\tNote\n-------------------------------------\n'
-        for i in range(1, int(lines) + 1):
-            try:
-                history = history + str(self.data[server][user][-i]) + '\n'
-            except:
-                break
-        history = history.replace(', ',',\t').replace('\'', '').replace('[','').replace(']','')
-        return history
-    #ANCHOR TRANSFER
-    def transfer(self, server, sender, recipients : list, amount, note):
-        if int(amount) * len(recipients) > self.getbalance(server, sender, 'int'):
-            pass
-            #await client.send_message()
-#!SECTION 
-
-#ANCHOR GetMembersFromRole
-def getMembersFromRole(server, role):
-    '''Return a list of member ids that are part of the given role name or id'''
-    role = role.replace('<','').replace('>','').replace(' ','')
-    members = []
-    if role.startswith('&'):
-        #is a role id
-        role = role.replace('&','')
-        for member in server.members:
-            for s_role in member.roles: 
-                if s_role.id == role:
-                    members.append(member.id)
-                    break
-        return members
-    elif role.startswith('@'):
-        #is a role name
-        role = role.replace('@','')
-        for member in server.members:
-            for s_role in member.roles: 
-                if s_role.name == role:
-                    members.append(member.id)
-                    break
-        return members
-    elif re.search(r'\d+', role):
-        #numerical id given
-        for member in server.members:
-            for s_role in member.roles: 
-                if s_role.id == role:
-                    members.append(member.id)
-                    break
-        return members
-    else:
-        #invalid role
-        del members
-        raise TypeError('Cannot get Members from Role, Role must be ID or Name string')
 
 #SECTION UPTIME FUNCTIONS
 #ANCHOR UPTIME
