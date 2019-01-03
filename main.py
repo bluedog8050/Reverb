@@ -67,7 +67,7 @@ except FileNotFoundError:
     defconfig['gm_role'] = 'gm'
     defconfig['player_role'] = 'player'
     defconfig['wikia_list'] = 'shadowrun'
-    saveConfig(config, 'bot.ini')
+    save_config(config, 'bot.ini')
 
 try:
     with open('reference_books.ini') as f:
@@ -95,9 +95,9 @@ except:
     print('Exiting script...')
     exit(0)
 
-links = readJsonFile('links.json')
-pbp_tracker = readJsonFile('pbp.json')
-command_stats = readJsonFile('cmd_stats.json')
+links = JsonFileObject('links.json')
+pbp_tracker = JsonFileObject('pbp.json')
+command_stats = JsonFileObject('cmd_stats.json')
 
 #books: {REF:[FolderURL,PgOffset]}
 
@@ -111,50 +111,53 @@ async def help(command):
     '''Lists available commands and their help text'''
     pass #Placeholder function to add help text to builtin help command
 
-@bot.command()
 #ANCHOR REVERB VERSION
+@bot.command()
 async def version(command):
     '''Echo the version number of discord.py in use'''
     v = discord.__version__
     print('discord.py ' + v)
     return 'Discord.py ' + v
 
-@bot.command()
 #ANCHOR REVERB UPTIME
+@bot.command()
 async def uptime(command):
     '''Echo how long since the bot's last reboot'''
-    msg = get_uptime()
-    print(msg)
-    return msg
+    time_now = datetime.datetime.utcnow()
+    time_delta = time_now - time_start
+    uptime_string = 'Reverb has been running for {0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(time_delta.days), str(time_delta.seconds//3600), str((time_delta.seconds//60)%60), str(time_delta.seconds%60))
+    print(uptime_string)
+    return uptime_string
 
-@bot.command()
 #ANCHOR SYSUPTIME
+@bot.command()
 async def sysuptime(command):
     '''Echo how long since the last OS reboot'''
-    msg = get_sysuptime()
-    print(msg)    
-    return msg
+    sysuptime_seconds = int(UptimeModule.uptime())
+    sysuptime_delta = datetime.timedelta(seconds = sysuptime_seconds)
+    sysuptime_string = 'OS has been running for {0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(sysuptime_delta.days), str(sysuptime_delta.seconds//3600), str((sysuptime_delta.seconds//60)%60), str(sysuptime_delta.seconds%60))
+    print(sysuptime_string)
+    return sysuptime_string
 
 #ANCHOR REVERB
 @bot.command('gm')
 async def reverb(command) -> '@tag #destination':
     '''Copy messages from @tag in this channel to #destination channel. \'all\' may be used to echo all messages'''
     if command.args[0].lower() == 'all':
-        command.args.pop(0) #pop out all keyword
-        s = add_link(command.server.id,command.channel.id,'all', command.args[0])
+        s = add_link(links, command.server.id, command.channel.id, 'all', command.args[1])
 
         print(s)
         
         if s is mstr.UPDATE_SUCCESS:
-            return '{0} Now forwarding all messages in <#{1}> to <#{2}>'.format(s, command.channel.name, command.args[0])
+            return '{0} Now forwarding all messages in {1} to {2}'.format(s, command.channel.name, command.args[0])
         else:
             return s
-
-        save_links()
+    elif command.args[0].lower() == 'unlink':
+        pass #TODO REVERB UNLINK
     else:
-        s = add_link(command.server.id, command.channel.id, command.args[0], command.args[1])
+        s = add_link(links, command.server.id, command.channel.id, command.args[0].strip('<@>'), command.args[1].strip('<#>'))
         if s is mstr.UPDATE_SUCCESS:
-            return '{0} Forwarding all messages in <#{1}> from <@{2}> to <#{3}>'.format(s, command.channel.id, command.args[0], command.args[1])
+            return '{0} Forwarding all messages in {1} from {2} to {3}'.format(s, command.channel.name, command.args[0], command.args[1])
         else:
             await client.send_message(command.channel, s)
         return
@@ -168,7 +171,7 @@ async def track(command) -> '@group ...':
     all_members = []
     for role in cmd_groups:
         members = {}
-        for member in getMembersFromRole(command.server, role):
+        for member in get_members_from_role(command.server, role):
             members[member] = False
             member_object = command.server.get_member(member)
             all_members.append(member_object.nick if member_object.nick else member_object.name)
@@ -190,7 +193,7 @@ async def skip(command) -> '[@tag ...]':
     for p in players:
         p = p.replace('<@','').replace('!','').replace('>','')
         if re.search(r'&?\w+',p): #search for role
-            for m in getMembersFromRole(command.server, p):
+            for m in get_members_from_role(command.server, p):
                 p_to_append.add(m)
             p_to_pop.add(p) #either role name or invalid entry, either way it needs to go now
     players = list(set(players) - (p_to_pop + p_to_append))
@@ -228,11 +231,12 @@ async def untrack(command):
         except Exception as e:
             print('Failed to delete old "Waiting for" messages')
             print(e)
-        save_pbp()
+        save_json_file(pbp_tracker, 'pbp.json')
         return mstr.PBP_STOPPED
     except KeyError:
         return mstr.PBP_STILL_STOPPED
 
+#ANCHOR WIKI
 @bot.command()
 async def wiki(command) -> '<Page Title>':
     '''Searches for and grabs a link to the page of the given title from the following wiki sites: {wiki}'''
@@ -328,13 +332,16 @@ async def check_pbp(message):
         author = message.author.id
         members_left = []
         for group in instance:
-            for member in group.keys():
-                if member == author:
-                    group[member] = True
-                if not group[member]:
-                    members_left.append(member)
-            if members_left:
-                break
+            if all(group.values()):
+                continue
+            else:
+                for member in group.keys():
+                    if member == author:
+                        group[member] = True
+                    if not group[member]:
+                        members_left.append(member)
+                if members_left:
+                    break
         #if the round is over, refresh the list
         if not members_left:
             for group in instance:
@@ -362,70 +369,10 @@ async def check_pbp(message):
         for m in members_left:
             string = string + f'<@!{m}>\t'
         await client.send_message(channel, string)
-        save_pbp()
+        save_pbp(pbp_tracker)
         return True #ignore rule reference triggers
     else:
         return False
-
-#SECTION UPTIME FUNCTIONS
-#ANCHOR UPTIME
-def get_uptime():
-    time_now = datetime.datetime.utcnow()
-    time_delta = time_now - time_start
-    uptime_string = 'Reverb has been running for {0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(time_delta.days), str(time_delta.seconds//3600), str((time_delta.seconds//60)%60), str(time_delta.seconds%60))
-    return uptime_string
-#ANCHOR SYSUPTIME
-def get_sysuptime():
-    sysuptime_seconds = int(UptimeModule.uptime())
-    sysuptime_delta = datetime.timedelta(seconds = sysuptime_seconds)
-    sysuptime_string = 'OS has been running for {0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(sysuptime_delta.days), str(sysuptime_delta.seconds//3600), str((sysuptime_delta.seconds//60)%60), str(sysuptime_delta.seconds%60))
-    return sysuptime_string
-#!SECTION
-
-#SECTION PLAY BY POST MANAGEMENT FUNCTIONS
-#ANCHOR SAVE PBP TRACKER
-def save_pbp():
-    with open('pbp.json', 'w') as outfile:
-        json.dump(pbp_tracker, outfile)
-    return
-#!SECTION
-
-#SECTION CHANNEL LINK MANAGEMENT FUNCTIONS
-#ANCHOR SAVE CONFIG
-def save_links():
-    with open('links.json', 'w') as outfile:
-        json.dump(links, outfile)
-    print('links saved')
-    return
-#ANCHOR ADD LINK
-def add_link(server,channel_src,user,channel_dest):
-    '''Adds a chat-mirror link to the links file.'''
-    try:
-        if server not in links: links.update({server : {}})
-        if channel_src not in links[server]: links[server].update({channel_src : {}})
-        if user not in links[server][channel_src]: links[server][channel_src].update({user : []})
-
-        if channel_dest not in links[server][channel_src][user]:
-            links[server][channel_src][user].append(channel_dest)
-            save_links()
-            return mstr.UPDATE_SUCCESS
-        else:
-            return mstr.UPDATE_DUPLICATE
-    except:
-        return mstr.UPDATE_ERROR
-#ANCHOR REMOVE LINK
-def remove_link(server,channel_src,user,channel_dest):
-    '''Removes a chat-mirror link in the links file.'''
-    try:
-        if channel_dest in links[server][channel_src][user]:
-            links[server][channel_src][user].remove(channel_dest)
-            save_links()
-            return mstr.UPDATE_SUCCESS
-        else:
-            return mstr.UPDATE_NOT_FOUND
-    except:
-        return mstr.UPDATE_ERROR
-#!SECTION
 
 #NOTE Create and set Ledger instances
 karma = Ledger('karma','Karma')

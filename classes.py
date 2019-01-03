@@ -3,12 +3,27 @@ import re
 import json
 from datetime import datetime
 from configparser import ConfigParser
-from functions import getMembersFromRole
+from functions import get_members_from_role
+
+class JsonFileObject(dict):
+    '''Represents a JSON file on disk'''
+    def __init__(self, filename):
+        self.filename = filename
+        try:
+            with open(filename, 'r') as f:
+                super().__init__(json.load(f))
+        except FileNotFoundError:
+            with open(filename, 'w+') as f:
+                json.dump(self, f, indent = 4)
+                super().__init__()
+    def save(self):
+        with open(self.filename, 'w+') as f:
+            json.dump(self, f, indent = 4)
 
 #region SECTION COMMAND CLASSES
 class CommandError(KeyError):
     pass
-    
+
 class CommandPacket():
     '''Parse and package a message containing a command and expose commonly used attributes from message class'''
     def __init__(self, config, message : discord.Message):
@@ -43,7 +58,7 @@ class CommandPacket():
         for t in m:
             if t.startswith('&'):
                 to_remove.append(t)
-                to_add.extend(getMembersFromRole(self.server, t))
+                to_add.extend(get_members_from_role(self.server, t))
         for t in to_remove:
             m.remove(t)
         for t in m:

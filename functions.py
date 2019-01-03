@@ -2,33 +2,41 @@ import discord
 import asyncio
 import re
 import json
+from datetime import datetime
+import message_strings as mstr
 
-def saveConfig(config, fn, *header):
+#ANCHOR Save Config
+def save_config(config, fn, *header):
     with open(fn, 'w+') as f:
         for l in header:
             f.write(l + '\n')
-        f.write('\n')
+        else:
+            f.write('\n')
         config.write(f)
 
-async def deleteMessages(client, msg_list):
-    for msg in msg_list:
-        await client.delete_message(msg)
-        await asyncio.sleep(1.2)
-
-def readJsonFile(filename, default = dict()):
+#ANCHOR Read JSON File
+def read_json_file(filename, default = dict()):
     try:
         with open(filename, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         with open(filename, 'w+') as f:
-            json.dump(default, f)
+            json.dump(default, f, indent=4)
             return default
 
-def saveJsonFile(obj, fn):
+#ANCHOR Save JSON
+def save_json_file(obj, fn):
     with open(fn, 'w+'):
-        json.dump(obj, fn)
+        json.dump(obj, fn, indent=4)
 
-def getMembersFromRole(server, role):
+#ANCHOR Delete Messages
+async def deleteMessages(client, msg_list):
+    for msg in msg_list:
+        await client.delete_message(msg)
+        await asyncio.sleep(1.2)
+
+#ANCHOR Get Members from Role
+def get_members_from_role(server, role):
     '''Return a list of member ids that are part of the given role name or id'''
     role = role.strip('<> \t\n\r')
     members = []
@@ -54,3 +62,50 @@ def getMembersFromRole(server, role):
         #invalid role
         del members
         raise TypeError('Role must be ID or Name string')
+
+#SECTION PLAY BY POST MANAGEMENT FUNCTIONS
+#ANCHOR SAVE PBP TRACKER
+def save_pbp(pbp_tracker):
+    with open('pbp.json', 'w') as outfile:
+        json.dump(pbp_tracker, outfile)
+    return
+#!SECTION
+
+#SECTION CHANNEL LINK MANAGEMENT FUNCTIONS
+#ANCHOR SAVE CONFIG
+def save_links(links):
+    with open('links.json', 'w') as outfile:
+        json.dump(links, outfile)
+    print('links saved')
+    return
+
+#ANCHOR ADD LINK
+def add_link(links, server, channel_src, user, channel_dest):
+    '''Adds a chat-mirror link to the links file.'''
+    try:
+        if server not in links: links.update({server : {}})
+        if channel_src not in links[server]: links[server].update({channel_src : {}})
+        if user not in links[server][channel_src]: links[server][channel_src].update({user : []})
+
+        if channel_dest not in links[server][channel_src][user]:
+            links[server][channel_src][user].append(channel_dest)
+            links.save()
+            return mstr.UPDATE_SUCCESS
+        else:
+            return mstr.UPDATE_DUPLICATE
+    except:
+        return mstr.UPDATE_ERROR
+
+#ANCHOR REMOVE LINK
+def remove_link(links, server,channel_src,user,channel_dest):
+    '''Removes a chat-mirror link in the links file.'''
+    try:
+        if channel_dest in links[server][channel_src][user]:
+            links[server][channel_src][user].remove(channel_dest)
+            links.save()
+            return mstr.UPDATE_SUCCESS
+        else:
+            return mstr.UPDATE_NOT_FOUND
+    except:
+        return mstr.UPDATE_ERROR
+#!SECTION
