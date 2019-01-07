@@ -328,7 +328,7 @@ async def on_message(message):
             await client.send_message(message.channel, string)
 #!SECTION
 
-async def check_pbp(pbp_tracker, message):
+async def check_pbp(message):
     #PBP Structure
     #{channel.id:[{group1}, {group2), ]}
     #group -> {member_id:bool, }
