@@ -87,8 +87,10 @@ def add_link(links, server, channel_src, user, channel_dest):
         if channel_src not in links[server]: links[server].update({channel_src : {}})
         if user not in links[server][channel_src]: links[server][channel_src].update({user : []})
 
-        if channel_dest not in links[server][channel_src][user]:
-            links[server][channel_src][user].append(channel_dest)
+        entry = links[server][channel_src][user]
+
+        if channel_dest not in entry:
+            entry.append(channel_dest)
             links.save()
             return mstr.UPDATE_SUCCESS
         else:

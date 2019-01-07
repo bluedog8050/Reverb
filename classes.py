@@ -7,7 +7,7 @@ from functions import get_members_from_role
 
 class JsonFileObject(dict):
     '''Represents a JSON file on disk'''
-    def __init__(self, filename):
+    def __init__(self, filename, **default):
         self.filename = filename
         try:
             with open(filename, 'r') as f:
@@ -15,7 +15,7 @@ class JsonFileObject(dict):
         except FileNotFoundError:
             with open(filename, 'w+') as f:
                 json.dump(self, f, indent = 4)
-                super().__init__()
+                super().__init__(default)
     def save(self):
         with open(self.filename, 'w+') as f:
             json.dump(self, f, indent = 4)
@@ -105,6 +105,8 @@ class Bot():
     async def help(self, config, cmd):
         l = []
         for n,d in self._registry.items():
+            if '<admin-only>' in d:
+                continue
             try:
                 line = '```' + config.get(cmd.server.id, 'command_char') + '{0} {1}```\n{2}{3}'.format(n, d[0].__annotations__['return'], '*' + str(d[1]) + '* - ' if d[1] else '', d[0].__doc__.format(wiki = config.get(cmd.server.id, 'wikia_list')))
             except KeyError:

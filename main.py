@@ -111,6 +111,12 @@ async def help(command):
     '''Lists available commands and their help text'''
     pass #Placeholder function to add help text to builtin help command
 
+#ANCHOR HELP
+@bot.command('<admin-only>')
+async def restart(command):
+    exit(1)
+    return
+
 #ANCHOR REVERB VERSION
 @bot.command()
 async def version(command):
@@ -322,7 +328,7 @@ async def on_message(message):
             await client.send_message(message.channel, string)
 #!SECTION
 
-async def check_pbp(message):
+async def check_pbp(pbp_tracker, message):
     #PBP Structure
     #{channel.id:[{group1}, {group2), ]}
     #group -> {member_id:bool, }
