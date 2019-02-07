@@ -36,14 +36,14 @@ async def deleteMessages(client, msg_list):
         await asyncio.sleep(1.2)
 
 #ANCHOR Get Members from Role
-def get_members_from_role(server, role):
+def get_members_from_role(guild, role):
     '''Return a list of member ids that are part of the given role name or id'''
     role = role.strip('<> \t\n\r')
     members = []
     if role.startswith('@'):
         #is a role name
         role = role.replace('@','')
-        for member in server.members:
+        for member in guild.members:
             for s_role in member.roles: 
                 if s_role.name == role:
                     members.append(member.id)
@@ -52,7 +52,7 @@ def get_members_from_role(server, role):
     elif re.search(r'&?\d+', role):
         #numerical id given
         role = role.replace('&','')
-        for member in server.members:
+        for member in guild.members:
             for s_role in member.roles: 
                 if s_role.id == role:
                     members.append(member.id)
@@ -80,14 +80,14 @@ def save_links(links):
     return
 
 #ANCHOR ADD LINK
-def add_link(links, server, channel_src, user, channel_dest):
+def add_link(links, guild, channel_src, user, channel_dest):
     '''Adds a chat-mirror link to the links file.'''
     try:
-        if server not in links: links.update({server : {}})
-        if channel_src not in links[server]: links[server].update({channel_src : {}})
-        if user not in links[server][channel_src]: links[server][channel_src].update({user : []})
+        if guild not in links: links.update({guild : {}})
+        if channel_src not in links[guild]: links[guild].update({channel_src : {}})
+        if user not in links[guild][channel_src]: links[guild][channel_src].update({user : []})
 
-        entry = links[server][channel_src][user]
+        entry = links[guild][channel_src][user]
 
         if channel_dest not in entry:
             entry.append(channel_dest)
@@ -99,11 +99,11 @@ def add_link(links, server, channel_src, user, channel_dest):
         return mstr.UPDATE_ERROR
 
 #ANCHOR REMOVE LINK
-def remove_link(links, server,channel_src,user,channel_dest):
+def remove_link(links, guild,channel_src,user,channel_dest):
     '''Removes a chat-mirror link in the links file.'''
     try:
-        if channel_dest in links[server][channel_src][user]:
-            links[server][channel_src][user].remove(channel_dest)
+        if channel_dest in links[guild][channel_src][user]:
+            links[guild][channel_src][user].remove(channel_dest)
             links.save()
             return mstr.UPDATE_SUCCESS
         else:
