@@ -3,5 +3,5 @@
 echo Running crash-start script...
 
 while true
-	do /home/pi/reverb/env/bin/python3 /home/pi/reverb/main.py && break
+	do /home/pi/reverb/env/bin/python3 /home/pi/reverb/reverb_rewrite.py && break
 done
