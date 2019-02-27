@@ -5,21 +5,6 @@ from datetime import datetime
 from configparser import ConfigParser
 from functions import get_members_from_role
 
-class JsonFileObject(dict):
-    '''Represents a JSON file on disk'''
-    def __init__(self, filename, **default):
-        self.filename = filename
-        try:
-            with open(filename, 'r') as f:
-                super().__init__(json.load(f))
-        except FileNotFoundError:
-            with open(filename, 'w+') as f:
-                json.dump(self, f, indent = 4)
-                super().__init__(default)
-    def save(self):
-        with open(self.filename, 'w+') as f:
-            json.dump(self, f, indent = 4)
-
 #region SECTION COMMAND CLASSES
 class CommandError(KeyError):
     pass

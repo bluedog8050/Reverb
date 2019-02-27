@@ -4,49 +4,65 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir) 
 import discord
 from discord.ext import commands
-from classes import JsonFileObject
+from JsonFileObject import JsonFileObject
+from collections import namedtuple
 import message_strings as mstr
+import logging
+import common
+
+log = logging.getLogger(__name__)
 
 class Reverb:
+
     def __init__(self, bot):
+
         self.bot = bot
         self.links = JsonFileObject('links.json')
-    async def on_message(self, ctx):
+        log.info(self.links)
+
+    async def on_message(self, message):
+
+        if message.author == self.bot.user or message.content.startswith(self.bot.command_prefix):
+            return
+
+        guild = str(message.guild.id)
+        ch_src = str(message.channel.id)
+        author = str(message.author.id)
+
+        log.info('Checking for links...')
+        log.info(f'Author: {author}')
+        
         try:
-            if ctx.author.id in self.links[ctx.guild.id][ctx.channel.id]:
-                print('Mirror!')
-                for channel in self.links[ctx.guild.id][ctx.channel.id][ctx.author.id]:
-                    embedable = discord.Embed(description = ctx.content)#, timestamp = ctx.timestamp)
-                    embedable.set_footer(text = 'from #' + ctx.channel.name)
-                    embedable.set_author(name= ctx.author.name, icon_url= ctx.author.avatar_url if not ctx.author.avatar_url == '' else ctx.author.default_avatar_url)
-                    await ctx.send(channel = self.bot.get_channel(channel), embed = embedable)
-            elif 'all' in self.links[ctx.guild.id][ctx.channel.id]:
-                print('Mirror any!')
-                for channel in self.links[ctx.guild.id][ctx.channel.id]['all']:
-                    embedable = discord.Embed(description = ctx.content)#, timestamp = ctx.timestamp)
-                    embedable.set_author(name= ctx.author.name, icon_url= ctx.author.avatar_url if ctx.author.avatar_url != '' else ctx.author.default_avatar_url)
-                    await ctx.send(channel = self.bot.get_channel(channel), embed = embedable)
-                    break
-        except KeyError: #Raised when Guild or Channel is not in self.links
+            table = self.links[guild]
+        except KeyError:
+            logging.debug(f'Guild not in links: {message.guild.name}')
+            return
+        
+        embedable = discord.Embed(description = message.content)#, timestamp = ctx.timestamp)
+        embedable.set_footer(text = 'from #' + message.channel.name)
+        embedable.set_author(name= message.author.name, icon_url= message.author.avatar_url if not message.author.avatar_url == '' else message.author.default_avatar_url)
+        
+        channels = []
+
+        try:
+            for channel in table[ch_src]['all']:
+                if channel not in channels:
+                    channels.append(channel)
+        except KeyError:
             pass
-    def add_link(self, guild, channel_src, user, channel_dest):
-        '''Adds a chat-mirror link to the links file.'''
+
         try:
-            if guild not in self.links: self.links.update({guild : {}})
-            if channel_src not in self.links[guild]: self.links[guild].update({channel_src : {}})
-            if user not in self.links[guild][channel_src]: self.links[guild][channel_src].update({user : []})
+            for channel in table[ch_src][author]:
+                if channel not in channels:
+                    channels.append(channel)
+        except KeyError:
+            pass
 
-            entry = self.links[guild][channel_src][user]
+        for channel in channels:
 
-            if channel_dest not in entry:
-                entry.append(channel_dest)
-                self.links.save()
-                return mstr.UPDATE_SUCCESS
-            else:
-                return mstr.UPDATE_DUPLICATE
-        except:
-            return mstr.UPDATE_ERROR
-    def remove_link(self, guild,channel_src,user,channel_dest):
+            await self.bot.get_channel(int(channel)).send(embed = embedable)
+        
+    def remove_link(self, guild, channel_src, user, channel_dest):
         '''Removes a chat-mirror link in the links file.'''
         try:
             if channel_dest in self.links[guild][channel_src][user]:
@@ -57,27 +73,40 @@ class Reverb:
                 return mstr.UPDATE_NOT_FOUND
         except:
             return mstr.UPDATE_ERROR
+    def get_links(self):
+        pass
     @commands.command()
     @commands.has_permissions(administrator = True)
-    async def link(self, ctx, user, channel):
+    async def link(self, ctx, user, channel_dest):
         '''Copy messages from @tag in this channel to #destination channel. \'all\' may be used to echo all messages'''
-        if user.lower() == 'all':
-            s = self.add_link(ctx.guild.id, ctx.channel.id, 'all', channel)
+        guild = str(ctx.guild.id)
+        ch_src = str(ctx.channel.id)
+        ch_dest = channel_dest.strip('<#>')
+        author = str(ctx.author.id)
 
-            print(s)
-            
-            if s is mstr.UPDATE_SUCCESS:
-                await ctx.send('{0} Now forwarding all messages in {1} to {2}'.format(s, ctx.channel.name, user))
-            else:
-                await ctx.send(s)
-        else:
-            s = self.add_link(ctx.guild.id, ctx.channel.id, user.strip('<@>'), channel.strip('<#>'))
-            if s is mstr.UPDATE_SUCCESS:
-                await ctx.send('{0} Forwarding all messages in {1} from {2} to {3}'.format(s, ctx.channel.name, user, channel))
-            else:
-                await ctx.send(s)
+        if guild not in self.links:
+            self.links.update({guild: {'__name__': ctx.guild.name, ch_src:{author: [ch_dest]}}})
+            await ctx.send(mstr.UPDATE_SUCCESS)
+            self.links.save()
             return
+        elif ch_src not in self.links[guild]:
+            self.links[guild].update({ch_src:{author:ch_dest}})
+            await ctx.send(mstr.UPDATE_SUCCESS)
+            self.links.save()
+            return
+        elif author not in self.links[guild][ch_src]:
+            self.links[guild][ch_src].update({author:[ch_dest]})
+            await ctx.send(mstr.UPDATE_SUCCESS)
+            self.links.save()
+            return
+        else:
+            if ch_dest in self.links[guild][ch_src][author]:
+                await ctx.send(mstr.UPDATE_DUPLICATE)
+                return
+            self.links[guild][ch_src][author].append(ch_dest)
+            self.links.save()
+            await ctx.send(mstr.UPDATE_SUCCESS)
 
 def setup(bot):
     bot.add_cog(Reverb(bot))
-    print('Reverb extension loaded!')
+    log.info('Loaded!')
