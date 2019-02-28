@@ -11,8 +11,13 @@ print('''Reverb Bot  Copyright (C) 2018  Derek Peterson
     This is free software, and you are welcome to redistribute it
     under certain conditions; see LICENSE file for more information.''')
 
-with open('bot.key') as k:
-    token = k.read()
+try:
+    with open('bot.key') as k:
+        token = k.read()
+except FileNotFoundError as e:
+    print('bot.key file not found!')
+    print('Exiting program...')
+    exit(0)
 
 bot = commands.Bot('!', pm_help = True)
 
