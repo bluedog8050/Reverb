@@ -16,13 +16,16 @@ class Tracker:
     @commands.command()
     @commands.has_any_role(gm_roles)
     async def track(self, ctx, *groups):
+        '''Starts turn tracking on this channel with the listed groups or individuals'''
         pass
     @commands.command()
     @commands.has_any_role(gm_roles)
     async def untrack(self, ctx):
+        '''Turns off turn tracking for this channel'''
         pass
     @commands.command()
     async def skip(self, ctx, *users):
+        '''Skips the current or named user(s)'''
         pass
     @commands.command()
     async def combat(self, ctx):

@@ -18,7 +18,6 @@ class Reverb:
 
         self.bot = bot
         self.links = JsonFileObject('links.json')
-        log.info(self.links)
 
     async def on_message(self, message):
 
@@ -59,22 +58,30 @@ class Reverb:
             pass
 
         for channel in channels:
-
             await self.bot.get_channel(int(channel)).send(embed = embedable)
-        
-    def remove_link(self, guild, channel_src, user, channel_dest):
-        '''Removes a chat-mirror link in the links file.'''
+
+    @commands.command()
+    @commands.has_permissions(administrator = True)  
+    async def unlink(self, ctx, user, channel_dest):
+        '''Removes a chat-mirror link.'''
+
+        user = user.strip('<@!>')
+        channel_src = str(ctx.channel.id)
+        guild = str(ctx.guild.id)
+
         try:
-            if channel_dest in self.links[guild][channel_src][user]:
-                self.links[guild][channel_src][user].remove(channel_dest)
-                self.links.save()
-                return mstr.UPDATE_SUCCESS
-            else:
-                return mstr.UPDATE_NOT_FOUND
+            self.links[guild][channel_src][user].remove(channel_dest)
+            self.links.save()
+            await ctx.send(mstr.UPDATE_SUCCESS)
+        except (KeyError, ValueError):
+            await ctx.send(mstr.UPDATE_NOT_FOUND)
         except:
-            return mstr.UPDATE_ERROR
+            await ctx.send(mstr.UPDATE_ERROR)
+
     def get_links(self):
+
         pass
+
     @commands.command()
     @commands.has_permissions(administrator = True)
     async def link(self, ctx, user, channel_dest):
