@@ -3,13 +3,13 @@ from discord.ext import commands
 import logging
 import os
 
-logging.basicConfig(level = logging.INFO)
-
 #Print Copyright disclaimer
-print('''Reverb Bot  Copyright (C) 2018  Derek Peterson
+print('''Reverb Bot  Copyright © 2018  Derek Peterson
     This program comes with ABSOLUTELY NO WARRANTY.
     This is free software, and you are welcome to redistribute it
     under certain conditions; see LICENSE file for more information.''')
+
+logging.basicConfig(level = logging.INFO)
 
 with open('bot.key') as k:
     token = k.read()
@@ -44,8 +44,14 @@ async def load(ctx, extension_name : str):
 @commands.has_permissions(administrator = True)
 async def unload(ctx, extension_name : str):
     '''Unloads an extension.'''
-    bot.unload_extension(extension_name)
+    bot.unload_extension('cogs.' + extension_name)
     await ctx.send(f'{extension_name} unloaded.')
+
+@bot.command()
+@commands.has_permissions(administrator = True)
+async def extloaded(ctx):
+    '''List currently loaded extensions.'''
+    await ctx.send(f'```{[x[5:] for x in bot.extensions.keys()]}```')
 
 @bot.command()
 @commands.has_permissions(administrator = True)
