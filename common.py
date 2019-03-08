@@ -14,20 +14,20 @@ def save_config(config, fn, *header):
             f.write('\n')
         config.write(f)
 
-#ANCHOR Read JSON File
-def read_json_file(filename, default = dict()):
-    try:
-        with open(filename, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        with open(filename, 'w+') as f:
-            json.dump(default, f, indent=4)
-            return default
+# #ANCHOR Read JSON File
+# def read_json_file(filename, default = dict()):
+#     try:
+#         with open(filename, 'r') as f:
+#             return json.load(f)
+#     except FileNotFoundError:
+#         with open(filename, 'w+') as f:
+#             json.dump(default, f, indent=4)
+#             return default
 
-#ANCHOR Save JSON
-def save_json_file(obj, fn):
-    with open(fn, 'w+'):
-        json.dump(obj, fn, indent=4)
+# #ANCHOR Save JSON
+# def save_json_file(obj, fn):
+#     with open(fn, 'w+'):
+#         json.dump(obj, fn, indent=4)
 
 #ANCHOR Delete Messages
 async def deleteMessages(client, msg_list):

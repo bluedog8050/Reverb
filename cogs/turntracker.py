@@ -1,17 +1,25 @@
 from discord.ext import commands
 import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('bot.' + __name__)
 
 gm_roles = ['gm','game master', 'dm', 'dungeon master', 'GM','Game Master', 'DM', 'Dungeon Master']
 player_roles = ['player', 'players']
 
+class Initiative:
+    def __init__(self, **items):
+        self.rolls = items
+    def get_initiative(self):
+        pass
 class Tracker:
     def __init__(self, bot):
         self.bot = bot
         self.mode = 'roundrobin'
         self.initiative = {}
-    async def on_message(self, ctx):
+    async def on_message(self, message):
+        if message.author == self.bot.user \
+            or message.content.startswith(self.bot.command_prefix):
+            return
         log.debug('message received')
     @commands.command()
     @commands.has_any_role(gm_roles)

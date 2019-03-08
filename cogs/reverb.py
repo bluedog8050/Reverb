@@ -10,7 +10,7 @@ import message_strings as mstr
 import logging
 import common
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('bot.' + __name__)
 
 class Reverb:
 

@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import logging
 import os
+import sys
 
 #Print Copyright disclaimer
 print('''Reverb Bot  Copyright © 2018  Derek Peterson
@@ -19,18 +20,26 @@ except FileNotFoundError as e:
 
 bot = commands.Bot('!', pm_help = True)
 
+root = logging.getLogger('bot')
+root.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+filter = logging.Filter('bot')
+handler.addFilter(filter)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+handler.setFormatter(formatter)
+root.addHandler(handler)
+
 # this specifies what extensions to load when the bot starts up (found in cogs folder)
 extensions_dir = os.listdir(os.path.abspath('./cogs/'))
-startup_extensions = [x[:-3] for x in extensions_dir if not x.startswith('__') and x.endswith('.py')]
-logging.info(f'Loading startup cogs: {startup_extensions}')
+startup_extensions = [x[:-3] for x in extensions_dir if x.endswith('.py') and not x.startswith('__')]
+print(f'Loading startup cogs: {startup_extensions}')
 #startup_extensions = ['reverb', 'turntracker', 'gamecommands', 'debug']
 
 @bot.event
 async def on_ready():
-    print('Logged in as')
-    print(bot.user.name)
-    print(bot.user.id)
-    print('------')
+    root.info(f'Logged in as {bot.user.name} {bot.user.id}')
 
 @bot.command()
 @commands.has_permissions(administrator = True)
@@ -52,8 +61,8 @@ async def unload(ctx, extension_name : str):
 
 @bot.command()
 @commands.has_permissions(administrator = True)
-async def extloaded(ctx):
-    '''List currently loaded extensions.'''
+async def running(ctx):
+    '''List currently loaded and running extensions.'''
     await ctx.send(f'```{[x[5:] for x in bot.extensions.keys()]}```')
 
 @bot.command()
@@ -75,6 +84,6 @@ if __name__ == '__main__':
             bot.load_extension('cogs.' + extension)
         except Exception as e:
             exc = f'{type(e).__name__}: {e}'
-            logging.info(f'Failed to load extension {extension}\n{exc}')
+            root.info(f'Failed to load extension {extension}\n{exc}')
 
 bot.run(token)

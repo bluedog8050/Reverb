@@ -4,32 +4,39 @@ from JsonFileObject import JsonFileObject
 import wikia as wikia_
 '''Basic Debug utilities to make sure I am doing things right'''
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('bot.' + __name__)
 
 class WikiaLookup():
+
     def __init__(self, bot):
         self.bot = bot
         self.wikia_list = JsonFileObject('wikia.json')
+
     @commands.command()
     async def wikia(self, ctx, *, term = ''):
         '''Searches for and grabs a link to the page of the given title from the set wiki sites.'''
-        if term:
-            w = 0
-            log.info(f'retrieve "{term}" from wikia...')
 
-            for sub in self.wikia_list[str(ctx.guild.id)]:
-                try:
-                    w = wikia_.page(sub.strip(' []'), term)
-                    log.info('page found on {0}...'.format(sub))
-                    break #page found, exit the for loop
-                except:
-                    w = 0
-                    log.info(f'page not found in {sub}')
-            
-            if w is not 0:
-                await ctx.send(w.url.replace(' ','_'))
-            else:
-                await ctx.send(f':sweat: Sorry, I couldnt find a page titled "{term}"...')
+        if not self.wikia_list.get(str(ctx.guild.id)):
+            await ctx.send(f'No wikias have been set for this guild. Use the `{self.bot.command_prefix}wikialist` command to add some to the list')
+            return
+        if term:
+            async with ctx.channel.typing():
+                w = 0
+                log.info(f'retrieve "{term}" from wikia...')
+
+                for sub in self.wikia_list.get(str(ctx.guild.id)):
+                    try:
+                        w = wikia_.page(sub.strip(' []'), term)
+                        log.info('page found on {0}...'.format(sub))
+                        break #page found, exit the for loop
+                    except:
+                        w = 0
+                        log.info(f'page not found in {sub}')
+                
+                if w is not 0:
+                    await ctx.send(w.url.replace(' ','_'))
+                else:
+                    await ctx.send(f':sweat: Sorry, I couldnt find a page titled "{term}"...')
         else:
             log.info('no search term...')
             await ctx.send('Use **!wiki <Page Title>** to search and grab a link to the page of that title on the following wiki sites: {}'.format(self.wikia_list[ctx.guild.id]))

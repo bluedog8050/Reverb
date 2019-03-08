@@ -3,7 +3,7 @@ import logging
 import re
 import discord
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('bot.' + __name__)
 
 '''Basic Debug utilities to make sure I am doing things right'''
 
@@ -26,6 +26,10 @@ class Debug():
             await self.bot.get_channel(int(regex.group(1))).send(regex.group(2))
         else:
             await ctx.send(message)
+    @commands.command()
+    async def echodm(self, ctx, *, message):
+        '''Echo a declared string'''
+        await ctx.author.send(message)
 
 def setup(bot):
     bot.add_cog(Debug(bot))
