@@ -4,8 +4,7 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir) 
 import discord
 from discord.ext import commands
-from JsonFileObject import JsonFileObject
-from collections import namedtuple
+from common.classes import JsonFileObject
 import message_strings as mstr
 import logging
 import common

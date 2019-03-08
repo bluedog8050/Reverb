@@ -1,5 +1,9 @@
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
 import discord
-from JsonFileObject import JsonFileObject
+from common.classes import JsonFileObject
 from discord.ext import commands
 import logging
 
@@ -34,8 +38,7 @@ class GameCommands:
     @commands.command()
     @commands.has_role('gm')
     async def mimic(self, ctx, user, *, message):
-        '''The bot will post a message imitating another user or an NPC
-        Expects: <user/npc name> <message>'''
+        '''The bot will post a message imitating another user or an NPC'''
 
         await ctx.message.delete()
 
@@ -63,8 +66,7 @@ class GameCommands:
     @commands.command()
     @commands.has_role('gm')
     async def addnpc(self, ctx, name, display_name, avatar_url):
-        '''Adds an NPC for use with the mimic command
-        Expects: <Name> <Display Name> <Avatar URL>'''
+        '''Adds an NPC for use with the mimic command'''
 
         await ctx.message.delete()
 
@@ -90,8 +92,7 @@ class GameCommands:
     @commands.command()
     @commands.has_role('gm')
     async def deletenpc(self, ctx, name):
-        '''Remove NPC from server list
-        Expects: <Name>'''
+        '''Remove NPC from server list'''
 
         await ctx.message.delete()
 

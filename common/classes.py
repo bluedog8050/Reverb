@@ -1,9 +1,36 @@
 import discord
 import re
+import os
 import json
+import logging
 from datetime import datetime
 from configparser import ConfigParser
 from functions import get_members_from_role
+
+class JsonFileObject(dict):
+    '''Represents a JSON file on disk'''
+    def __init__(self, filename, **default):
+        try:
+            os.mkdir(os.path.abspath(f'./data'))
+        except FileExistsError:
+            pass
+
+        self.filename = os.path.abspath(f'./data/{filename}')
+        
+        try:
+            with open(self.filename, 'r') as f:
+                super().__init__(json.load(f))
+        except FileNotFoundError:
+            logging.warning(f'Unable to read {self.filename}')
+            super().__init__(default)
+            with open(self.filename, 'w+') as f:
+                json.dump(self, f, indent = 4)
+    def save(self):
+        with open(self.filename, 'w+') as f:
+            json.dump(self, f, indent = 4)
+    def savecopy(self, as_filename):
+        with open(as_filename, 'w+') as f:
+            json.dump(self, f, indent = 4)
 
 #region SECTION COMMAND CLASSES
 class CommandError(KeyError):
