@@ -14,13 +14,26 @@ player_roles = ['player', 'players']
 class Tracker:
     def __init__(self, bot):
         self.bot = bot
-        self.mode = 'roundrobin'
         self.initiative = JsonFileObject('initiative.json')
     async def on_message(self, message):
         if message.author == self.bot.user \
             or message.content.startswith(self.bot.command_prefix):
             return
         log.debug('message received')
+
+    async def get_next_turn(guild_id, channel_id):
+        guild_ini = self.initiative.get(str(guild_id))
+        ini = guild_ini.get(str(channel_id))
+
+        turn = {}
+
+        #TODO: generate passes from initial rolls, minus penalties, minus 10 per pass
+        
+        #TODO: sort list, get highest value for pass
+
+        return turn
+
+
 
     @commands.command()
     @commands.has_any_role(gm_roles)
