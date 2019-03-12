@@ -47,22 +47,29 @@ class Tracker:
 
         mode = ini.get('mode')
 
-        if mode == 'sr5':
+        entries = ini.get('entries')
+
+        if mode == 'off':
+            next = None
+        elif mode == 'sr5':
             next = ('', 0)
-            for e in ini.get('entries'):
-                if e['roll'] - spent
+            for i, e in entries:
+                mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
+                if mod_ini > 0 and mod_ini > next[1]:
+                    next = (i, mod_ini)
+            if next == ('', 0):
+                for i, e in entries:
+                    e['turns taken'] = 0
+                    e['spent'] = 0
+        elif mode == 'roundrobin':
+            next = []
+            for i, e in entries:
+                if e['turns taken'] <= ini['round']:
+                    next.append(i)
+        else:
+            raise commands.UserInputError('Invalid Initiative mode, use "off", "sr5", or "roundrobin"')
 
-        # round: #
-        # pass: #
-        # turns: [ID, Initiative, Spent]
-
-        #TODO: generate passes from initial rolls, minus penalties, minus 10 per pass
-        
-        #TODO: sort list, get highest value for pass
-
-        return turn
-
-
+        return next
 
     @commands.command()
     @commands.has_any_role(gm_roles)
