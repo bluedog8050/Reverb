@@ -21,7 +21,7 @@ class Tracker:
             return
         log.debug('message received')
 
-    async def get_next_turn(guild_id, channel_id):
+    async def get_next_turn(self, guild_id, channel_id):
         guild_ini = self.initiative.get(str(guild_id))
         ini = guild_ini.get(str(channel_id))
 
@@ -54,10 +54,7 @@ class Tracker:
 
     @commands.command()
     async def sr5combat(self, ctx):
-        if self.mode == 'roundrobin':
-            self.mode = 'combat'
-        else:
-            self.mode = 'roundrobin'
+        pass
 
     @commands.command()
     async def add(self, ctx, initiative, name = None):

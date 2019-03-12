@@ -32,8 +32,8 @@ handler.setFormatter(formatter)
 root.addHandler(handler)
 
 # this specifies what extensions to load when the bot starts up (found in cogs folder)
-extensions_dir = os.listdir(os.path.abspath('./cogs/'))
-startup_extensions = [x[:-3] for x in extensions_dir if x.endswith('.py') and not x.startswith('__')]
+extensions_list = os.listdir(os.path.abspath('./cogs/'))
+startup_extensions = [x[:-3] for x in extensions_list if x.endswith('.py') and not x.startswith('__')]
 print(f'Loading startup cogs: {startup_extensions}')
 #startup_extensions = ['reverb', 'turntracker', 'gamecommands', 'debug']
 
