@@ -21,11 +21,40 @@ class Tracker:
             return
         log.debug('message received')
 
-    async def get_next_turn(self, guild_id, channel_id):
-        guild_ini = self.initiative.get(str(guild_id))
-        ini = guild_ini.get(str(channel_id))
+    @commands.command()
+    @commands.has_role('gm')
+    async def init(self, ctx, mode, *, initiative_list):
+        '''Add user to initiative order with the given initiative result
+        Initiative list should be formatted in a comma separated list:
+        (e.g @user#1234 10, @member#4321 15, Big Monster 12, ...)
+        
+        Available modes are: 
+        off - Deactivate tracking on this channel
+        roundrobin - Everyone gets exactly one turn
+        sr5 - One turn for every 10 points of initiative rolled'''
 
-        turn = {}
+        simple_list = [x.strip for x in initiative_list.split(',')]
+
+        entries = {}
+        for e in simple_list:
+            for t in e.split(' '):
+                entries.update({' '.join(t[0:-1]): {'roll':t[-1], 'spent': 0, 'turns taken': 0}})
+
+        self.initiative.update({str(ctx.channel.id):{'mode': mode, 'round': 0 , 'pass': 0, 'entries': entries}})
+
+    async def get_next_turn(self, channel_id):
+        ini = self.initiative.get(str(channel_id))
+
+        mode = ini.get('mode')
+
+        if mode == 'sr5':
+            next = ('', 0)
+            for e in ini.get('entries'):
+                if e['roll'] - spent
+
+        # round: #
+        # pass: #
+        # turns: [ID, Initiative, Spent]
 
         #TODO: generate passes from initial rolls, minus penalties, minus 10 per pass
         
