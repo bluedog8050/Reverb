@@ -5,7 +5,7 @@ sys.path.insert(0,parentdir)
 import discord
 from discord.ext import commands
 from common.classes import JsonFileObject
-import message_strings as mstr
+import common.message_strings as mstr
 import logging
 import common
 
