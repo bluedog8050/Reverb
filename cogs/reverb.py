@@ -27,8 +27,8 @@ class Reverb:
         ch_src = str(message.channel.id)
         author = str(message.author.id)
 
-        log.info('Checking for links...')
-        log.info(f'Author: {author}')
+        log.debug('Checking for links...')
+        log.debug(f'Author: {author}')
         
         try:
             table = self.links[guild]

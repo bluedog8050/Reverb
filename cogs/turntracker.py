@@ -16,42 +16,59 @@ class Tracker:
     def __init__(self, bot):
         self.bot = bot
         self.initiative = JsonFileObject('initiative.json')
+    def _is_waiting_msg(self, m):
+            return m.content.startswith(mstr.PBP_WAITING)
     async def on_message(self, message):
-        if message.author == self.bot.user \
-            or message.content.startswith(self.bot.command_prefix):
+        if message.author == self.bot.user or self._is_waiting_msg(message):
+            return
+        elif message.content.startswith(self.bot.command_prefix):
+            await message.delete()
+            await self.update_tracking_message(message.channel)
             return
 
         ini = self.initiative.get(str(message.channel.id))
 
         next = self.get_next_turn(message.channel.id)
 
-        author = f'<@{message.author.id.replace("!","")}>'
+        author = message.author.mention.replace("!","")
+
+        if not next:
+            return
 
         if author in next:
             ini['entries'][author]['turns taken'] += 1
+            self.initiative.save()
         else:
             await message.delete()
-            await message.channel.send(f'Sorry {message.author.mention}, you can only send a message when it is your turn! :smile:', delete_after = 15)
+            await message.channel.send(f'Sorry {message.author.mention}, you can only send a message when it is your turn! :slight_smile:', delete_after = 15)
 
         await self.update_tracking_message(message.channel)
 
     async def update_tracking_message(self, channel):
         ini = self.initiative[str(channel.id)]
+
+        await channel.purge(check = self._is_waiting_msg)
+
+        turn = self.get_next_turn(channel.id)
         mode = ini['mode']
 
-        def is_waiting_msg(m):
-            return m.content.startswith(mstr.PBP_WAITING)
+        if mode == 'off':
+            return
 
-        channel.purge(limit = 20, check = is_waiting_msg, bulk = False)
+        _round = str(ini['round'] + 1)
+        _pass = str(ini['pass'] + 1) if mode == 'sr5' else 0
+        log.debug(f'Turn = {turn}')
 
-        if mode is not 'off':
-            turn = self.get_next_turn(channel.id)
-            try:
-                turn = ' '.join(turn)
-            except TypeError:
-                pass
-            msg = mstr.PBP_WAITING + '\n' + f"`Mode: {mode}`" + '\n' + turn
-            await channel.send(msg)
+        if isinstance(turn, list):
+            turn = '    '.join(turn)
+
+        msg = mstr.PBP_WAITING
+        msg += '\n' + f'`Round: {_round}'
+        if _pass: msg +=  f' | Pass: {_pass}'
+        msg +=  f' | Mode: {mode}`'
+        msg += '\n \n' + turn
+
+        await channel.send(msg)
 
     @commands.command()
     @commands.has_role('gm')
@@ -65,14 +82,23 @@ class Tracker:
         roundrobin - Everyone gets exactly one turn
         sr5 - One turn for every 10 points of initiative rolled'''
 
+        #sanity check
+        valid_modes = ['sr5', 'roundrobin', 'off']
+        if mode not in valid_modes:
+            await ctx.send(f'Invalid mode used, please use one of the following: {valid_modes}. (eg. `{self.bot.command_prefix}init roundrobin @user#1234...`)', delete_after = 10)
+            return
+
         simple_list = [x.strip() for x in ' '.join(initiative_list).replace('!','').split(',')]
 
         log.debug(simple_list)
 
         entries = {}
         for e in simple_list:
-            t = e.split(' ')
-            entries.update({' '.join(t[0:-1]): {'roll':t[-1], 'spent': 0, 'turns taken': 0}})
+            if mode == 'sr5':
+                t = e.split(' ')
+                entries.update({' '.join(t[0:-1]): {'roll':int(t[-1]), 'spent': 0, 'turns taken': 0}})
+            elif mode == 'roundrobin':
+                entries.update({e: {'turns taken': 0}})
 
         log.debug(f'--> {entries}')
 
@@ -80,13 +106,13 @@ class Tracker:
 
         log.debug(f'----> {self.initiative[str(ctx.channel.id)]}')
 
-        await self.update_tracking_message(ctx.channel)
+        self.initiative.save()
 
-        await ctx.message.delete()
+        await self.update_tracking_message(ctx.channel)
 
     def get_next_turn(self, channel_id):
         try:
-            ini = self.initiative[channel_id]
+            ini = self.initiative[str(channel_id)]
         except KeyError:
             return None
 
@@ -94,41 +120,46 @@ class Tracker:
 
         entries = ini['entries']
 
-        if mode is 'off':
-            next = []
+        if mode == 'off':
+            next = ''
 
-        elif mode is 'sr5':
-            next = ('', 0)
-            for i, e in entries:
+        elif mode == 'sr5':
+            highest = ('', 0)
+            for i, e in entries.items():
                 mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
-                if mod_ini > 0 and mod_ini > next[1] and e['turns taken'] <= ini['pass']:
-                    next = (i, mod_ini)
-            if next is ('', 0):
+                if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
+                    highest = (i, mod_ini)
+            if highest == ('', 0):
                 ini['pass'] += 1
-                for i, e in entries:
+                for i, e in entries.items():
                     mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
-                    if mod_ini > 0 and mod_ini > next[1] and e['turns taken'] <= ini['pass']:
-                        next = (i, mod_ini)
-            if next is ('', 0):
+                    if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
+                        highest = (i, mod_ini)
+                self.initiative.save()
+            if highest == ('', 0):
                 ini['round'] += 1
                 ini['pass'] = 0
-                for i, e in entries:
+                for i, e in entries.items():
                     e['turns taken'] = 0
                     e['spent'] = 0
-                    if e['roll'] > next[1]:
-                        next = (i, e['roll'])
-            if next is ('', 0):
+                    if e['roll'] > highest[1]:
+                        highest = (i, e['roll'])
+                self.initiative.save()
+            if highest == ('', 0):
                 next = r'¯\_(ツ)_/¯'
+            else: 
+                next = f'{highest[0]} ({str(highest[1])})'
 
-        elif mode is 'roundrobin':
+        elif mode == 'roundrobin':
             next = []
-            for i, e in entries:
+            for i, e in entries.items():
                 if e['turns taken'] <= ini['round']:
                     next.append(i)
             if not next:
                 ini['round'] += 1
                 if e['turns taken'] <= ini['round']:
                     next.append(i)
+                self.initiative.save()
             if not next:
                 next = [r'¯\_(ツ)_/¯']
 
@@ -155,10 +186,14 @@ class Tracker:
 
         for user in user_list:
             if user in c_ini:
-                ini[user]['turns taken'] += 1
+                ini['entries'][user]['turns taken'] += 1
+                self.initiative.save()
 
-        await self.update_tracking_message(ctx.channel)
-
+    # @commands.command()
+    #     async def spendinit(self, ctx, amount, *description):
+    #         author = ctx.author.mention.replace('!','')
+    #         entry = self.initiative.get
+    #         if 
 
 def setup(bot):
     bot.add_cog(Tracker(bot))
