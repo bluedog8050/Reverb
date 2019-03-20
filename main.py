@@ -4,6 +4,8 @@ import logging
 import os
 import sys
 
+__version__ = '2.0a'
+
 #Print Copyright disclaimer
 print('''Reverb Bot  Copyright © 2018  Derek Peterson
     This program comes with ABSOLUTELY NO WARRANTY.
@@ -18,10 +20,10 @@ except FileNotFoundError as e:
     print('Exiting program...')
     exit(0)
 
-bot = commands.Bot('!', pm_help = True)
+bot = commands.Bot('!')
 
 root = logging.getLogger('bot')
-root.setLevel(logging.DEBUG)
+root.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 filter = logging.Filter('bot')

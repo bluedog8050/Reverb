@@ -9,6 +9,8 @@ import common.message_strings as mstr
 import logging
 import common
 
+__verson__ = '2.00a'
+
 log = logging.getLogger('bot.' + __name__)
 
 class Reverb:

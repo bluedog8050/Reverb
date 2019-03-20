@@ -6,6 +6,7 @@ from discord.ext import commands
 import logging
 import re
 import discord
+import main
 
 log = logging.getLogger('bot.' + __name__)
 
@@ -17,7 +18,8 @@ class Debug():
     @commands.command()
     async def version(self, ctx):
         '''Prints discord.py version being used'''
-        await ctx.send(discord.version_info)
+        version = f'Reverb: v{main.__version__}' + '\n' + f'discord.py: {discord.version_info}'
+        await ctx.send(version)
     @commands.command()
     async def ping(self, ctx):
         '''Ping for response'''
