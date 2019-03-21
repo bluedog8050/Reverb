@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 
-__version__ = '2.0a'
 
 #Print Copyright disclaimer
 print('''Reverb Bot  Copyright © 2018  Derek Peterson
@@ -33,9 +32,14 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(messag
 handler.setFormatter(formatter)
 root.addHandler(handler)
 
+print(f'Starting in {os.getcwd()}')
+
 # this specifies what extensions to load when the bot starts up (found in cogs folder)
 extensions_list = os.listdir(os.path.abspath('./cogs/'))
-startup_extensions = [x[:-3] for x in extensions_list if x.endswith('.py') and not x.startswith('__')]
+startup_extensions =[]
+for x in extensions_list:
+    if x.endswith('.py') and not x.startswith('__'):
+        startup_extensions.append(x[:-3])
 print(f'Loading startup cogs: {startup_extensions}')
 #startup_extensions = ['reverb', 'turntracker', 'gamecommands', 'debug']
 
@@ -87,5 +91,4 @@ if __name__ == '__main__':
         except Exception as e:
             exc = f'{type(e).__name__}: {e}'
             root.info(f'Failed to load extension {extension}\n{exc}')
-
-bot.run(token)
+    bot.run(token)
