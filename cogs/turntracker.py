@@ -19,6 +19,7 @@ class Tracker(commands.Cog):
         self.initiative = JsonFileObject('initiative.json')
     def _is_waiting_msg(self, m):
             return m.content.startswith(mstr.PBP_WAITING)
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user or self._is_waiting_msg(message):
             return
