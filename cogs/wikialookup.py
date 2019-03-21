@@ -15,7 +15,7 @@ from discord.ext import commands
 log = logging.getLogger('bot.' + __name__)
 
 
-class WikiaLookup():
+class WikiaLookup(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot

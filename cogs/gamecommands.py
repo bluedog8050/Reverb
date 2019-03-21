@@ -9,7 +9,7 @@ import logging
 
 log = logging.getLogger('bot.' + __name__)
 
-class GameCommands:
+class GameCommands(commands.Cog):
 
     def __init__(self, bot):
 

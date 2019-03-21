@@ -13,7 +13,7 @@ __verson__ = '2.00a'
 
 log = logging.getLogger('bot.' + __name__)
 
-class Reverb:
+class Reverb(commands.Cog):
 
     def __init__(self, bot):
 

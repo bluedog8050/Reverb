@@ -13,7 +13,7 @@ log = logging.getLogger('bot.' + __name__)
 # gm_roles = ['gm','game master', 'dm', 'dungeon master', 'GM','Game Master', 'DM', 'Dungeon Master']
 # player_roles = ['player', 'players']
 
-class Tracker:
+class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.initiative = JsonFileObject('initiative.json')

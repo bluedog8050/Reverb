@@ -13,7 +13,7 @@ log = logging.getLogger('bot.' + __name__)
 
 '''Basic Debug utilities to make sure I am doing things right'''
 
-class Debug():
+class Debug(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     @commands.command()
