@@ -5,4 +5,3 @@ bot.key
 *.ini
 *.json
 *.code-workspace
-start.sh
