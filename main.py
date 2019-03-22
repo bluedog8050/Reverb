@@ -3,7 +3,6 @@ from discord.ext import commands
 import logging
 import os
 import sys
-import uptime as uptime_module
 from datetime import datetime
 
 #Print Copyright disclaimer
@@ -34,6 +33,11 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 handler.setFormatter(formatter)
 root.addHandler(handler)
+
+try:
+    import uptime as uptime_module
+except:
+    root.warn('Uptime module is not installed. use "pip3 install uptime" to resolve this warning')
 
 print(f'Starting in {os.getcwd()}')
 
