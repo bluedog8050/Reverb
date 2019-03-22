@@ -3,7 +3,7 @@ from discord.ext import commands
 import logging
 import os
 import sys
-from datetime import datetime
+import datetime
 
 #Print Copyright disclaimer
 print('''Reverb Bot  Copyright © 2018  Derek Peterson
@@ -19,7 +19,7 @@ except FileNotFoundError as e:
     print('Exiting program...')
     exit(0)
 
-start_time = datetime.now()
+start_time = datetime.datetime.now()
 
 bot = commands.Bot('!')
 
@@ -58,7 +58,7 @@ async def on_ready():
 @commands.has_permissions(administrator = True)
 async def uptime(ctx):
     '''Yields system and bot uptime'''
-    bot_time_delta = datetime.now() - start_time
+    bot_time_delta = datetime.datetime.now() - start_time
     botuptime = '{0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(bot_time_delta.days), str(bot_time_delta.seconds//3600), str((bot_time_delta.seconds//60)%60), str(bot_time_delta.seconds%60))
     sysuptime_seconds = sysuptime_seconds = int(uptime_module.uptime())
     sysuptime_delta = datetime.timedelta(seconds = sysuptime_seconds)
