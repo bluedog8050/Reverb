@@ -19,6 +19,7 @@ class Tracker(commands.Cog):
         self.initiative = JsonFileObject('initiative.json')
     def _is_waiting_msg(self, m):
             return m.content.startswith(mstr.PBP_WAITING)
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user or self._is_waiting_msg(message):
             return
@@ -126,7 +127,7 @@ class Tracker(commands.Cog):
             if formula == None:
                 await ctx.send('Unable to update user initiative. A formula is required for sr5 initiative in the format `x+yd6`', delete_after = 15)
             else:
-                if entries[player]:
+                if entries.get(player):
                     entries[player]['formula'] = formula
                 else:
                     entries.update({player: {'formula': formula, 'roll': 0, 'spent': 0, 'turns taken': 0}})
@@ -324,9 +325,8 @@ class Tracker(commands.Cog):
         await self.update_tracking_message(ctx)
 
     @commands.command()
-    @commands.has_role('gm')
     async def taketurn(self, ctx, user, *, action_taken):
-        '''Allows the GM to take a turn for an NPC or player. User argument only required for round robin'''
+        '''Allows a person to take a turn for an NPC or player. User argument only required for round robin'''
 
         ini = self.initiative.get(str(ctx.channel.id))
         cini = await self.get_next_turn(ctx)

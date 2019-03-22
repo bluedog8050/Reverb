@@ -20,6 +20,7 @@ class Reverb(commands.Cog):
         self.bot = bot
         self.links = JsonFileObject('links.json')
 
+    @commands.Cog.listener()
     async def on_message(self, message):
 
         if message.author == self.bot.user or message.content.startswith(self.bot.command_prefix):
