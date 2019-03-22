@@ -7,11 +7,16 @@ import logging
 import re
 import discord
 
+'''Basic Debug utilities to make sure I am doing things right'''
+
+try:
+    import uptime
+except ImportError:
+    pass
+
 __version__ = '2.0a'
 
 log = logging.getLogger('bot.' + __name__)
-
-'''Basic Debug utilities to make sure I am doing things right'''
 
 class Debug(commands.Cog):
     def __init__(self, bot):

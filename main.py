@@ -3,7 +3,8 @@ from discord.ext import commands
 import logging
 import os
 import sys
-
+import uptime as uptime_module
+from datetime import datetime
 
 #Print Copyright disclaimer
 print('''Reverb Bot  Copyright © 2018  Derek Peterson
@@ -18,6 +19,8 @@ except FileNotFoundError as e:
     print('bot.key file not found!')
     print('Exiting program...')
     exit(0)
+
+start_time = datetime.now()
 
 bot = commands.Bot('!')
 
@@ -49,8 +52,26 @@ async def on_ready():
 
 @bot.command()
 @commands.has_permissions(administrator = True)
+async def uptime(ctx):
+    '''Yields system and bot uptime'''
+    bot_time_delta = datetime.now() - start_time
+    botuptime = '{0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(bot_time_delta.days), str(bot_time_delta.seconds//3600), str((bot_time_delta.seconds//60)%60), str(bot_time_delta.seconds%60))
+    sysuptime_seconds = sysuptime_seconds = int(uptime_module.uptime())
+    sysuptime_delta = datetime.timedelta(seconds = sysuptime_seconds)
+    sysuptime = '{0} Days, {1} Hours, {2} Minutes, and {3} Seconds'.format(str(sysuptime_delta.days), str(sysuptime_delta.seconds//3600), str((sysuptime_delta.seconds//60)%60), str(sysuptime_delta.seconds%60))
+    await ctx.send(f'Reverb has been running for {botuptime}\nOS has been running for {sysuptime}')
+
+@bot.command()
+@commands.has_permissions(administrator = True)
+async def restart(ctx):
+    '''Admin Only. Restart Reverb bot.'''
+    await ctx.send(f'Restarting bot...')
+    exit(2)
+
+@bot.command()
+@commands.has_permissions(administrator = True)
 async def load(ctx, extension_name : str):
-    '''Loads an extension.'''
+    '''Admin Only. Loads an extension.'''
     try:
         bot.load_extension('cogs.' + extension_name)
     except (AttributeError, ImportError) as e:
@@ -61,12 +82,11 @@ async def load(ctx, extension_name : str):
 @bot.command()
 @commands.has_permissions(administrator = True)
 async def unload(ctx, extension_name : str):
-    '''Unloads an extension.'''
+    '''Admin Only. Unloads an extension.'''
     bot.unload_extension('cogs.' + extension_name)
     await ctx.send(f'{extension_name} unloaded.')
 
 @bot.command()
-@commands.has_permissions(administrator = True)
 async def running(ctx):
     '''List currently loaded and running extensions.'''
     await ctx.send(f'```{[x[5:] for x in bot.extensions.keys()]}```')
@@ -74,7 +94,7 @@ async def running(ctx):
 @bot.command()
 @commands.has_permissions(administrator = True)
 async def reload(ctx, extension_name : str):
-    '''Reloads an extension.'''
+    '''Admin Only. Reloads an extension.'''
     bot.unload_extension(extension_name)
     await ctx.send(f'{extension_name} unloaded.')
     try:
