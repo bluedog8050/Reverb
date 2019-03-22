@@ -79,7 +79,7 @@ async def reload(ctx, extension_name : str):
     await ctx.send(f'{extension_name} unloaded.')
     try:
         bot.load_extension('cogs.' + extension_name)
-    except (AttributeError, ImportError) as e:
+    except Exception as e:
         await ctx.send(f'```py\n{type(e).__name__}: {str(e)}\n```')
         return
     await ctx.send(f'{extension_name} loaded.')
