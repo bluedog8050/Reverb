@@ -28,6 +28,9 @@ class Tracker(commands.Cog):
 
         ini = self.initiative.get(str(message.channel.id))
 
+        if not ini:
+            return
+
         next = await self.get_next_turn(message)
 
         author = message.author.mention.replace("!","")
