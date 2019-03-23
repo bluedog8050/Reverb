@@ -5,7 +5,7 @@ sys.path.insert(0,parentdir)
 
 from discord.ext import commands
 import logging
-from common.classes import JsonFileObject
+from common.classes import Ledger
 import discord
 
 log = logging.getLogger(f'bot.{__name__}')
@@ -22,18 +22,24 @@ except FileExistsError:
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.ledgers = {}
+        currency_list = os.listdir(os.path.abspath(data_dir))
+
+        for c in currency_list:
+            try:
+                self.ledgers.update(c, Ledger(data_dir, c, c))
+                log.info(f'{c} Ledger loaded')
+            except:
+                log.info(f'{c} Ledger could not be loaded')
 
     @commands.group()
-    async def economy(self, ctx): 
-        '''Work in Progress'''
-        pass
-
-    @economy.command()
     @commands.has_permissions(administrator = True)
-    async def setcurrency(self, ctx, unit_name, *flags):
+    async def economy(self, ctx, *subcommand): 
         '''Work in Progress'''
-        #'''Add or modify unit of currency to the list for this server. Possible flags include: limited, notrade, prefixunit=$'''
-        pass
+
+        if subcommand:
+            if subcommand[0] == 'set':
+                pass
 
     @commands.command()
     async def give(self, ctx, user, amount, unit):
