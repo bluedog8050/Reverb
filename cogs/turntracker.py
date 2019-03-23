@@ -164,7 +164,7 @@ class Tracker(commands.Cog):
 
         #if no entries are listed, reroll all of them
         if not players: entries = ini['entries']
-        else: entries = [ini['entries'].get(p) for p in players]
+        else: entries = {p:ini['entries'].get(p) for p in players}
 
         for k, e in entries.items():
             try:
