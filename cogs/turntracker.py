@@ -132,12 +132,14 @@ class Tracker(commands.Cog):
             else:
                 if entries.get(player):
                     entries[player]['formula'] = formula
+                    await ctx.send(f'{player} initiative formula updated!')
                 else:
                     entries.update({player: {'formula': formula, 'roll': 0, 'spent': 0, 'turns taken': 0}})
-            return
+                    await ctx.send(f'{player} added to initiative!')
 
         if ini['mode'] == 'roundrobin':
             entries.update({player: {'formula': formula, 'roll': 0, 'spent': 0, 'turns taken': ini['round'] - 1}})
+            await ctx.send(f'{player} added to initiative!')
 
         await self._roll(ctx, player)
         await self.update_tracking_message(ctx)
