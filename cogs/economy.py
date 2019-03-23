@@ -25,24 +25,29 @@ class Economy(commands.Cog):
 
     @commands.group()
     async def economy(self, ctx): 
+        '''Work in Progress'''
         pass
 
     @economy.command()
     @commands.has_permissions(administrator = True)
     async def setcurrency(self, ctx, unit_name, *flags):
-        '''Add or modify unit of currency to the list for this server. Possible flags include: limited, notrade, prefixunit=$'''
+        '''Work in Progress'''
+        #'''Add or modify unit of currency to the list for this server. Possible flags include: limited, notrade, prefixunit=$'''
         pass
 
     @commands.command()
     async def give(self, ctx, user, amount, unit):
+        '''Work in Progress'''
         pass
 
     @commands.command()
-    async def check(self, ctx, unit):
+    async def balance(self, ctx, unit):
+        '''Work in Progress'''
         pass
 
     @commands.command()
     async def history(self, ctx, unit_name, lines = 5, user = None):
+        '''Work in Progress'''
         pass
 
 
