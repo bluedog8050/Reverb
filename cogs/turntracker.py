@@ -3,6 +3,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir) 
 import common.message_strings as mstr
+import discord
 from discord.ext import commands
 from common.classes import JsonFileObject
 import logging
@@ -298,7 +299,7 @@ class Tracker(commands.Cog):
             entry['spent'] += amount
             new_init = net_init - amount
             self.initiative.save()
-            await ctx.send(f'{author} spent {amount} initiative to take the following action. Their initiative is now **{new_init}** \n \n {action_taken}')
+            await ctx.send(f'```{ctx.author.name} spent [{amount}] initiative to take the following action. Their initiative is now [{new_init}]``` {action_taken}')
         else:
             await ctx.send(f'Sorry, {author}, you do not have the enough initiative to spend. Your current score is **{net_init}**.', delete_after = 15)
         
@@ -323,7 +324,7 @@ class Tracker(commands.Cog):
             entry['spent'] += amount
             new_init = net_init - amount
             self.initiative.save()
-            await ctx.send(f'{author} spent {amount} initiative to take the following action. Their initiative is now **{new_init}** \n \n {action_taken}')
+            await ctx.send(f'```{ctx.author.name} spent {amount} initiative to take the following action. Their initiative is now [{new_init}]``` {action_taken}')
         else:
             await ctx.send(f'Sorry, {author} does not have the enough initiative to spend. Their current score is **{net_init}**.', delete_after = 15)
 
@@ -349,16 +350,16 @@ class Tracker(commands.Cog):
         if player in cini:
             entry['turns taken'] += 1
             self.initiative.save()
-            await ctx.send(action_taken)
+            embeddable = discord.Embed(description = f"{user}'s turn was taken by {ctx.author.name}")
+            await ctx.send(embed = embeddable)
         else:
             await ctx.send(f'Sorry, {player} does not have a turn to take right now', delete_after = 15)
 
-        await ctx.message.delete()
         await self.update_tracking_message(ctx)
 
     @commands.command()
     @commands.has_role('gm')
-    async def addroll(self, ctx, user, roll : int = 0):
+    async def setroll(self, ctx, user, roll : int = 0):
         '''Set an individuals initiative roll. If round robin, this will cause the player to join the next round'''
 
         player = user.replace('!', '')
