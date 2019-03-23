@@ -144,8 +144,9 @@ class Tracker(commands.Cog):
 
     @commands.command()
     @commands.has_role('gm')
-    async def reroll(self, ctx, *players):
+    async def reroll(self, ctx, *users):
         '''[sr5 only] Re-roll initiative for any selected user without disturbing other entries in the order. Name no players to reroll everyone.'''
+        players = [x.replace('!','') for x in users]
         await self._roll(ctx, *players)
 
     async def _roll(self, ctx, *players):
@@ -181,7 +182,7 @@ class Tracker(commands.Cog):
                 e['roll'] = grand_total
                 done.append(f"{k}\t{e['roll']}")
             except Exception as f:
-                failed.append(f"{k}\t{e['formula']}, {f}")
+                failed.append(f"{k}, {f}")
 
         await ctx.channel.send('```Initiative has been rolled:```{0}'.format('\n'.join(done)))
         
