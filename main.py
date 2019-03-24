@@ -108,11 +108,11 @@ async def reload(ctx, extension_name : str):
         return
     await ctx.send(f'{extension_name} loaded.')
 
-if __name__ == '__main__':
-    for extension in startup_extensions:
-        try:
-            bot.load_extension('cogs.' + extension)
-        except Exception as e:
-            exc = f'{type(e).__name__}: {e}'
-            root.info(f'Failed to load extension {extension}\n{exc}')
-    bot.run(token)
+
+for extension in startup_extensions:
+    try:
+        bot.load_extension('cogs.' + extension)
+    except Exception as e:
+        exc = f'{type(e).__name__}: {e}'
+        root.info(f'Failed to load extension {extension}\n{exc}')
+bot.run(token)
