@@ -38,22 +38,29 @@ class JsonFileObject(dict):
 
 class Ledger:
     ## {'server':{'user':['oct-18-2018',1,2,'This is a test entry']},}
-    def __init__(self, data_directory, name, unit_string, *flags):
+    def __init__(self, data_directory, name, *flags):
         self.name = name
         self.data_dir = data_directory
-        self.unit_string = unit_string
         
         try:
             with open(os.path.abspath(f'{os.path.join(self.data_dir, self.name)}.json')) as f:
                 self.data = json.load(f)
         except:
             self.data = {}
+        try:
+            self.unit_string = self.data['__unit__']
+        except KeyError:
+            self.unit_string = name
         if 'prefix' in flags: self.prefix = True 
         else: self.prefix = False
         if 'allow_negative' in flags: self.allow_negative = True 
         else: self.allow_negative = False
         
         return
+
+    #ANCHOR SET PARAM
+    def set_parameter(self, parameter, value):
+        pass
 
     # SERVER > USER > [date, change, balance, note],
     #ANCHOR ADD ENTRY
