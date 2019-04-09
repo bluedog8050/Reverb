@@ -61,7 +61,7 @@ class Tracker(commands.Cog):
         log.debug(f'Turn = {turn}')
 
         if isinstance(turn, list):
-            turn = '\t'.join(turn)
+            turn = '    '.join(turn)
 
         msg = mstr.PBP_WAITING
         msg += '\n' + f'`Round: {_round}'
