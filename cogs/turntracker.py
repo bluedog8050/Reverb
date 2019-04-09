@@ -333,13 +333,13 @@ class Tracker(commands.Cog):
 
     @commands.command()
     async def taketurn(self, ctx, user, *, action_taken):
-        '''Allows a person to take a turn for an NPC or player. User argument only required for round robin'''
+        '''Allows a person to take a turn for an NPC or player. User argument only required for roundrobin'''
 
         ini = self.initiative.get(str(ctx.channel.id))
         cini = await self.get_next_turn(ctx)
 
-        #if mode is not round robin, attach the user argument to the beginning of action string since it should be ignored
-        if ini['mode'] != 'round robin': 
+        #if mode is not roundrobin, attach the user argument to the beginning of action string since it should be ignored
+        if ini['mode'] != 'roundrobin': 
             action_taken = f'{user} {action_taken}'
             user = cini.split('(')[0].strip() #current initiative minus the initiative score
         
@@ -360,7 +360,7 @@ class Tracker(commands.Cog):
     @commands.command()
     @commands.has_role('gm')
     async def setroll(self, ctx, user, roll : int = 0):
-        '''Set an individuals initiative roll. If round robin, this will cause the player to join the next round'''
+        '''Set an individuals initiative roll. If roundrobin, this will cause the player to join the next round'''
 
         player = user.replace('!', '')
         ini = self.initiative[str(ctx.channel.id)]
