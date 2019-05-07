@@ -33,10 +33,12 @@ class Debug(commands.Cog):
             await self.bot.get_channel(int(regex.group(1))).send(regex.group(2))
         else:
             await ctx.send(message)
+        await ctx.message.delete()
     @commands.command()
     async def echodm(self, ctx, *, message):
         '''Echo a declared string'''
         await ctx.author.send(message)
+        await ctx.message.delete()
 
 def setup(bot):
     bot.add_cog(Debug(bot))

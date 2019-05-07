@@ -22,28 +22,56 @@ except FileExistsError:
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.ledger = JsonFileObject('economy.json')
+        self.global_economy = JsonFileObject('economy.json')
 
-    @commands.group()
+    def get_local_tokens(self, ctx):
+        tokens = self.global_economy.get(ctx.server)
+
+        if not tokens:
+            self.global_economy.update(ctx.server, {})
+            tokens = self.global_economy[ctx.server]
+
+        return tokens
+
+    def get_token(self, ctx, name):
+        tokens = self.get_local_tokens(ctx)
+        token = tokens.get(name)
+
+        if not token:
+            tokens.update(name, {})
+            token = tokens[name]
+            token.update('ledger', {})
+
+        return token
+
+    @commands.command()
     @commands.has_permissions(administrator = True)
     async def economy(self, ctx, *subcommand): 
-        '''Work in Progress'''
+        '''Update or add properties of a token.
+        
+        economy <token_name> <property> <value>'''
 
-        if subcommand:
-            if subcommand[0] == 'create':
-                name = subcommand[1]
-            elif subcommand[0] == 'setparam'
-                name = subcommand[1]
-                param = subcommand[2]
-                value = subcommand[3]
+        name = subcommand[0]
+        param = subcommand[1]
+        value = subcommand[2]
 
-    @commands.group()
-    @commands.has_permissions(administrator = True)
+        token = self.get_token(ctx, name)
+
+        token.update(param, value)
+
+    @commands.command()
+    @commands.has_role('gm')
     async def setusermax(self, ctx, user, unit, max_value): 
-        '''Work in Progress'''
+        '''Set the maximum amount of a token for a single user
+        
+        setusermax <user> <token_name> <max_value>'''
+        
+        tokens = self.get_local_tokens(ctx)
 
-    @commands.group()
-    @commands.has_permissions(administrator = True)
+        token = tokens.get(unit)
+
+    @commands.command()
+    @commands.has_role('gm')
     async def take(self, ctx, unit, user, max_value): 
         '''Work in Progress'''
 

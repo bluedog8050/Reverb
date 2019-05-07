@@ -22,9 +22,9 @@ class Tracker(commands.Cog):
             return m.content.startswith(mstr.PBP_WAITING)
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author == self.bot.user or self._is_waiting_msg(message):
-            return
-        elif message.content.startswith(self.bot.command_prefix):
+        #ignore self and command messages
+        if message.author == self.bot.user \
+        or message.content.startswith(self.bot.command_prefix):
             return
 
         ini = self.initiative.get(str(message.channel.id))
