@@ -9,7 +9,7 @@ import discord
 
 '''Basic Debug utilities to make sure I am doing things right'''
 
-__version__ = '2.0a'
+__version__ = '2.01a'
 
 log = logging.getLogger('bot.' + __name__)
 
@@ -27,7 +27,7 @@ class Debug(commands.Cog):
         await ctx.send('Pong!')
     @commands.command()
     async def echo(self, ctx, *, message):
-        '''Echo a declared string'''
+        '''Echo a string'''
         if message.startswith('<#'):
             regex = re.search(r'^<#(\d+)> (.+)', message)
             await self.bot.get_channel(int(regex.group(1))).send(regex.group(2))
@@ -36,7 +36,7 @@ class Debug(commands.Cog):
         await ctx.message.delete()
     @commands.command()
     async def echodm(self, ctx, *, message):
-        '''Echo a declared string'''
+        '''Echo a string as direct message'''
         await ctx.author.send(message)
         await ctx.message.delete()
 

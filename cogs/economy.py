@@ -5,6 +5,7 @@ sys.path.insert(0,parentdir)
 
 from discord.ext import commands
 import logging
+import configparser
 from common.classes import JsonFileObject
 import discord
 
@@ -17,7 +18,6 @@ try:
     os.mkdir(os.path.abspath(data_dir))
 except FileExistsError:
     pass
-
 
 class Economy(commands.Cog):
     def __init__(self, bot):
@@ -41,6 +41,8 @@ class Economy(commands.Cog):
             tokens.update(name, {})
             token = tokens[name]
             token.update('ledger', {})
+
+        token = Token(token)
 
         return token
 
@@ -69,6 +71,8 @@ class Economy(commands.Cog):
         tokens = self.get_local_tokens(ctx)
 
         token = tokens.get(unit)
+
+        users =  token.get(user.strip('<@!>'))
 
     @commands.command()
     @commands.has_role('gm')

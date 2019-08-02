@@ -124,6 +124,6 @@ class Ledger:
             return 'Funds successfully transferred'
         else:
             balance = self.getbalance(ctx, sender)
-            return f'Insufficient funds, current balance is {balance}')
+            return f'Insufficient funds, current balance is {balance}'
             #await client.send_message()
 #!SECTION 
