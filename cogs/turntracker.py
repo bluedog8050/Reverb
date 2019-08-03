@@ -49,17 +49,18 @@ class Tracker(commands.Cog):
 
     async def update_tracking_message(self, ctx):
         ini = self.initiative[str(ctx.channel.id)]
-
-        turn = await self.get_next_turn(ctx)
         mode = ini['mode']
+
+        await ctx.channel.purge(check = self._is_waiting_msg)
 
         if mode == 'off':
             return
 
         _round = str(ini['round'] + 1)
         _pass = str(ini['pass'] + 1) if mode == 'sr5' else 0
-        log.debug(f'Turn = {turn}')
 
+        turn = await self.get_next_turn(ctx)
+        log.debug(f'Turn = {turn}')
         if isinstance(turn, list):
             turn = '    '.join(turn)
 
@@ -68,9 +69,74 @@ class Tracker(commands.Cog):
         if _pass: msg +=  f' | Pass: {_pass}'
         msg +=  f' | Mode: {mode}`'
         msg += '\n \n' + turn
-
-        await ctx.channel.purge(check = self._is_waiting_msg)
         await ctx.channel.send(msg)
+
+    async def get_next_turn(self, ctx : discord.ext.commands.Context):
+        try:
+            ini = self.initiative[str(ctx.channel.id)]
+        except KeyError:
+            return None
+
+        mode = ini['mode']
+
+        entries = ini['entries']
+
+        if mode == 'off':
+            next = ''
+
+        elif mode == 'sr5':
+            highest = ('', 0)
+            for i, e in entries.items():
+                mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
+                if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
+                    if not e.get('name'):
+                        member = ctx.guild.get_member(i.strip("<@!>"))
+                        name = (getattr(member, 'nick', None) or getattr(member, 'name', None)) or i
+                        e.update({'name': name})
+                    highest = (i, mod_ini)
+            if highest == ('', 0): #increment pass
+                ini['pass'] += 1
+                for i, e in entries.items():
+                    mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
+                    if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
+                        highest = (i, mod_ini)
+                self.initiative.save()
+            if highest == ('', 0): #increment round
+                await self._roll(ctx)
+                ini['round'] += 1
+                ini['pass'] = 0
+                for i, e in entries.items():
+                    e['turns taken'] = 0
+                    e['spent'] = 0
+                    if e['roll'] > highest[1]:
+                        highest = (i, e['roll'])
+                self.initiative.save()
+            if highest == ('', 0): #wtf?
+                next = r'¯\_(ツ)_/¯'
+            else: 
+                next = f'{highest[0]} ({str(highest[1])})'
+
+        elif mode == 'roundrobin':
+            next = []
+            for i, e in entries.items():
+                if not e.get('name'):
+                        member = ctx.guild.get_member(i.strip("<@!>"))
+                        name = (getattr(member, 'nick', None) or getattr(member, 'name', None)) or i
+                        e.update({'name': name})
+                if e['turns taken'] <= ini['round']:
+                    next.append(i)
+            if not next:
+                ini['round'] += 1
+                if e['turns taken'] <= ini['round']:
+                    next.append(i)
+                self.initiative.save()
+            if not next:
+                next = [r'¯\_(ツ)_/¯']
+
+        else:
+            raise commands.CommandInvokeError('Invalid Initiative mode, use "off", "sr5", or "roundrobin"')
+
+        return next
 
     @commands.command()
     @commands.has_role('gm')
@@ -196,65 +262,6 @@ class Tracker(commands.Cog):
 
         self.initiative.save()
         await self.update_tracking_message(ctx)
-
-    async def get_next_turn(self, ctx):
-        try:
-            ini = self.initiative[str(ctx.channel.id)]
-        except KeyError:
-            return None
-
-        mode = ini['mode']
-
-        entries = ini['entries']
-
-        if mode == 'off':
-            next = ''
-
-        elif mode == 'sr5':
-            highest = ('', 0)
-            for i, e in entries.items():
-                mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
-                if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
-                    highest = (i, mod_ini)
-            if highest == ('', 0):
-                ini['pass'] += 1
-                for i, e in entries.items():
-                    mod_ini = e['roll'] - e['spent'] - (10 * e['turns taken'])
-                    if mod_ini > 0 and mod_ini > highest[1] and e['turns taken'] <= ini['pass']:
-                        highest = (i, mod_ini)
-                self.initiative.save()
-            if highest == ('', 0):
-                await self._roll(ctx)
-                ini['round'] += 1
-                ini['pass'] = 0
-                for i, e in entries.items():
-                    e['turns taken'] = 0
-                    e['spent'] = 0
-                    if e['roll'] > highest[1]:
-                        highest = (i, e['roll'])
-                self.initiative.save()
-            if highest == ('', 0):
-                next = r'¯\_(ツ)_/¯'
-            else: 
-                next = f'{highest[0]} ({str(highest[1])})'
-
-        elif mode == 'roundrobin':
-            next = []
-            for i, e in entries.items():
-                if e['turns taken'] <= ini['round']:
-                    next.append(i)
-            if not next:
-                ini['round'] += 1
-                if e['turns taken'] <= ini['round']:
-                    next.append(i)
-                self.initiative.save()
-            if not next:
-                next = [r'¯\_(ツ)_/¯']
-
-        else:
-            raise commands.CommandInvokeError('Invalid Initiative mode, use "off", "sr5", or "roundrobin"')
-
-        return next
 
     @commands.command()
     async def skip(self, ctx, *users):

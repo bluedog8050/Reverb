@@ -42,8 +42,6 @@ class Economy(commands.Cog):
             token = tokens[name]
             token.update('ledger', {})
 
-        token = Token(token)
-
         return token
 
     @commands.command()
