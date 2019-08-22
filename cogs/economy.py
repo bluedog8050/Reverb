@@ -25,11 +25,12 @@ class Economy(commands.Cog):
         self.global_economy = JsonFileObject('economy.json')
 
     def get_local_tokens(self, ctx):
-        tokens = self.global_economy.get(ctx.server)
+        tokens = self.global_economy.get(ctx.server.id)
 
         if not tokens:
-            self.global_economy.update(ctx.server, {})
-            tokens = self.global_economy[ctx.server]
+            self.global_economy.update(ctx.server.id, {})
+            tokens = self.global_economy[ctx.server.id]
+            self.global_economy.save()
 
         return tokens
 
@@ -41,55 +42,78 @@ class Economy(commands.Cog):
             tokens.update(name, {})
             token = tokens[name]
             token.update('ledger', {})
+            self.global_economy.save()
 
         return token
 
     @commands.command()
     @commands.has_permissions(administrator = True)
-    async def economy(self, ctx, *subcommand): 
-        '''Update or add properties of a token.
-        
-        economy <token_name> <property> <value>'''
+    async def economy(self, ctx, name = None, param = None, value = None): 
+        '''Manage server currencies, use empty command to list available tokens and properties. Name only to create a new token or list all player balances.'''
 
-        name = subcommand[0]
-        param = subcommand[1]
-        value = subcommand[2]
+        if not name:
+            msg = '```'
+            for token_name, token in self.get_local_tokens(ctx):
+                msg += token_name + '\n'
+                for key, item in token:
+                    if not key == 'ledger':
+                        msg += '\t{0}: \t{1}'.format(key, item)
+                msg += '\n\n'
+            msg += '```'
+        elif name and not param:
+            msg = '```'
+            msg += name.capitalize() + '\n\n'
+            for player, history in self.get_local_tokens(ctx)[name].get("ledger"):
+                try:
+                    player = 
+                except:
+                    pass
+                msg += f''
+                msg += '\n'
+            msg += '```'
+        else:
+            token = self.get_token(ctx, name)
 
-        token = self.get_token(ctx, name)
-
-        token.update(param, value)
+            if param and value:
+                token.update(param, value)
+                self.global_economy.save()
 
     @commands.command()
     @commands.has_role('gm')
-    async def setusermax(self, ctx, user, unit, max_value): 
-        '''Set the maximum amount of a token for a single user
+    async def setmax(self, ctx, user, unit, max_value): 
+        '''Set the maximum amount of a token for a single user.
         
-        setusermax <user> <token_name> <max_value>'''
+        setmax <user> <token_name> <max_value>'''
         
         tokens = self.get_local_tokens(ctx)
 
         token = tokens.get(unit)
 
-        users =  token.get(user.strip('<@!>'))
+        if not token:
+            return "Currency not found"
+
+        token_user =  token.get(user.strip('<@!>'))
+
+        token_user.update('max', max_value)
 
     @commands.command()
     @commands.has_role('gm')
     async def take(self, ctx, unit, user, max_value): 
-        '''Work in Progress'''
+        '''GM Only. Remove an amount from a player\'s inventory'''
 
     @commands.command()
     async def give(self, ctx, user, amount, unit):
-        '''Work in Progress'''
+        '''WIP. Transfer an amount to another player. Currency must be tradable.'''
         pass
 
     @commands.command()
     async def burn(self, ctx, user, amount, unit):
-        '''Work in Progress'''
+        '''WIP. Spends tokens and lowers maximum by the same amount'''
         pass
 
     @commands.command()
-    async def balance(self, ctx, unit):
-        '''Work in Progress'''
+    async def balance(self, ctx, unit, player = None):
+        '''WIP. Shows account balance for self or another player'''
         pass
 
     @commands.command()
