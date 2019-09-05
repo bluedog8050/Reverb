@@ -1,4 +1,5 @@
 reference/
+data/
 .vscode/
 __pycache__
 bot.key
