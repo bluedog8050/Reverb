@@ -5,6 +5,7 @@ sys.path.insert(0,parentdir)
 
 from discord.ext import commands
 import logging
+import re
 import configparser
 from common.classes import JsonFileObject
 import discord
@@ -45,6 +46,15 @@ class Economy(commands.Cog):
             self.global_economy.save()
 
         return token
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author == self.bot.user \
+        or message.content.startswith(self.bot.command_prefix):
+            return
+        
+        #detect edge rolls and deduct edge automatically
+        term = re.search(r'[.+!]')
 
     @commands.command()
     @commands.has_permissions(administrator = True)
@@ -98,8 +108,9 @@ class Economy(commands.Cog):
 
     @commands.command()
     @commands.has_role('gm')
-    async def take(self, ctx, unit, user, max_value): 
+    async def take(self, ctx, amount, unit, user, max_value): 
         '''GM Only. Remove an amount from a player\'s inventory'''
+        
 
     @commands.command()
     async def give(self, ctx, user, amount, unit):
