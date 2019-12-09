@@ -23,8 +23,10 @@ class Tracker(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         #ignore self and command messages
-        if message.author == self.bot.user \
-        or message.content.startswith(self.bot.command_prefix):
+        if message.author == self.bot.user:
+            return
+        elif message.content.startswith(self.bot.command_prefix):
+            await self.update_tracking_message(message)
             return
 
         ini = self.initiative.get(str(message.channel.id))
@@ -270,7 +272,7 @@ class Tracker(commands.Cog):
         author_roles = [r.name for r in ctx.author.roles]
 
         if users and 'gm' not in author_roles:
-            await ctx.send(f'Only a GM can name another person to skip, players should only use "{self.bot.command_prefix}skip" on it\'s own to skip themselves :smile:', delete_after = 15)
+            await ctx.send(f'Only a GM can name another person to skip, players should only use `{self.bot.command_prefix}skip` on it\'s own to skip themselves :smile:', delete_after = 15)
             return
         elif not users:
             users = [ctx.author.mention]

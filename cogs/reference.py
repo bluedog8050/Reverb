@@ -27,7 +27,7 @@ class Reference(commands.Cog):
         or message.content.startswith(self.bot.command_prefix):
             return
         for book in self.books.keys():
-            terms = re.findall(r'{0}\s(?:p|pg)?\s?(\d+)'.format(book), message.content, re.IGNORECASE)
+            terms = re.findall(r'{0}\s(?:p|pg|page)?\s?(\d+)'.format(book), message.content, re.IGNORECASE)
         if terms:
             log.debug(f'Detected reference command: {book}')
             log.debug(f'{len(terms)} {book} terms found!')

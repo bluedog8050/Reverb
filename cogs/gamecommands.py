@@ -22,8 +22,9 @@ class GameCommands(commands.Cog):
         '''Post open message and add player role to allow posting in channel'''
 
         await ctx.message.delete()
-        player = [x for x in ctx.guild.roles if x.name.lower().startswith('player')]
-        await ctx.channel.set_permissions(player[0], send_messages = True)
+        player_roles = [x for x in ctx.guild.roles if x.name.lower().startswith('player')]
+        for role in player_roles:
+            await ctx.channel.set_permissions(role, send_messages = True, read_messages = True)
         await ctx.send('```This log is now open for player entries```')
 
     @commands.command()
@@ -116,8 +117,8 @@ class GameCommands(commands.Cog):
         for name, npc in npc_list.items():
             embedable = discord.Embed(description = 'Lorem impsum sic amor emet')#, timestamp = ctx.message.timestamp)
             embedable.set_footer(text = f'!mimic "{name}"')
-            embedable.set_author(name = npc.get('display_name'))#, icon_url= npc.get('avatar_url'))
-            embedable.set_thumbnail(url = npc.get('avatar_url'))
+            embedable.set_author(name = npc.get('display_name'), icon_url= npc.get('avatar_url'))
+            #embedable.set_thumbnail(url = npc.get('avatar_url'))
             await ctx.send(embed = embedable)
 
 
