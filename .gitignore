@@ -6,3 +6,5 @@ bot.key
 *.ini
 *.json
 *.code-workspace
+template_requirements.txt
+copy_requirements.cmd

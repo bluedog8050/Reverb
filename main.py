@@ -20,8 +20,6 @@ except FileNotFoundError as e:
 
 start_time = datetime.datetime.now()
 
-bot = commands.Bot('!')
-
 root = logging.getLogger('bot')
 root.setLevel(logging.INFO)
 
@@ -45,6 +43,8 @@ except:
     root.warn('Discord module is not installed. use "pip install discord" to resolve this warning')
 
 print(f'Starting in {os.getcwd()}')
+
+bot = commands.Bot('!')
 
 # this specifies what extensions to load when the bot starts up (found in cogs folder)
 extensions_list = os.listdir(os.path.abspath('./cogs/'))
