@@ -1,5 +1,4 @@
-import discord
-from discord.ext import commands
+
 import logging
 import os
 import sys
@@ -37,7 +36,13 @@ root.addHandler(handler)
 try:
     import uptime as uptime_module
 except:
-    root.warn('Uptime module is not installed. use "pip3 install uptime" to resolve this warning')
+    root.warn('Uptime module is not installed. use "pip install uptime" to resolve this warning')
+
+try:
+    import discord
+    from discord.ext import commands
+except:
+    root.warn('Discord module is not installed. use "pip install discord" to resolve this warning')
 
 print(f'Starting in {os.getcwd()}')
 
