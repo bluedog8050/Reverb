@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 while true
-    do ~/Reverb/bin/python ~/Reverb/main.py && break
+    do bin/python3 main.py && break
 done
